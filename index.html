@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Konsertliste</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --cream: #f8f4ed;
+    --gold: #c9963b;
+    --gold-light: #e8c97a;
+    --rust: #8b3a3a;
+    --line: #d4c9b5;
+    --played: #2d6a4f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+
+  /* ── LOGIN PAGE ── */
+  #loginPage {
+    min-height: 100vh;
+    background: var(--ink);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+  #loginPage.skjult { display: none; }
+
+  .login-box {
+    background: var(--cream);
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .login-box h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-bottom: 0.2rem; text-align: center; }
+  .login-box h2 span { color: var(--gold); }
+  .login-box p { color: #888; font-size: 0.9rem; margin-bottom: 1rem; text-align: center; }
+
+  .login-admin-btn {
+    display: block;
+    width: 100%;
+    background: var(--ink);
+    color: var(--gold-light);
+    border: 2px solid var(--gold);
+    border-radius: 10px;
+    padding: 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    margin-bottom: 1rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .login-admin-btn:active { background: #2d2d4e; }
+
+  .login-divider { border: none; border-top: 1px solid var(--line); margin-bottom: 1rem; }
+
+  .login-names { display: flex; flex-direction: column; gap: 0.5rem; }
+  .login-name-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    background: #fff;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .login-name-btn:active { border-color: var(--gold); background: #fffdf5; }
+  .inst-badge { font-size: 0.72rem; background: var(--cream); border: 1px solid var(--line); border-radius: 20px; padding: 2px 8px; color: #888; margin-left: auto; white-space: nowrap; }
+
+  /* ── MAIN APP ── */
+  #appPage { display: none; padding: 1.5rem 1rem 4rem; }
+  #appPage.vis { display: block; }
+
+  header { text-align: center; margin-bottom: 1.25rem; }
+  header::after { content: ''; display: block; width: 60px; height: 3px; background: var(--gold); margin: 0.6rem auto 0; }
+  h1 { font-family: 'Playfair Display', serif; font-size: clamp(1.6rem, 5vw, 2.8rem); }
+  h1 span { color: var(--gold); }
+
+  .user-bar { display: flex; align-items: center; gap: 0.6rem; background: var(--ink); color: var(--cream); padding: 0.5rem 1rem; border-radius: 30px; font-size: 0.82rem; margin: 0 auto 1.25rem; width: fit-content; flex-wrap: wrap; justify-content: center; }
+  .user-name { font-weight: 600; color: var(--gold-light); }
+  .logout-btn { background: none; border: 1px solid rgba(255,255,255,0.25); color: #aaa; border-radius: 20px; padding: 3px 10px; font-size: 0.78rem; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+  /* ADMIN TOOLS */
+  .admin-tools { display: none; justify-content: flex-end; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .admin-tools.vis { display: flex; }
+  .btn-tool { background: none; border: 1.5px solid var(--line); border-radius: 7px; padding: 0.4rem 0.85rem; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer; color: var(--ink); }
+  .btn-tool:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* TABS */
+  .concerts-section { margin-bottom: 1.25rem; }
+  .concerts-label { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa; margin-bottom: 0.6rem; }
+  .tabs-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+  .concert-tab { background: #fff; border: 1.5px solid var(--line); border-radius: 10px; padding: 0.55rem 0.9rem; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; color: var(--ink); display: flex; align-items: center; gap: 0.4rem; -webkit-tap-highlight-color: transparent; }
+  .concert-tab.active { background: var(--ink); color: var(--gold-light); border-color: var(--ink); font-weight: 500; }
+  .tab-del { color: #aaa; padding: 0 3px; font-size: 0.8rem; }
+  .tab-del:active { color: var(--rust); }
+  .btn-new-concert { background: var(--gold); color: #fff; border: none; border-radius: 10px; padding: 0.55rem 0.9rem; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer; }
+
+  /* NEW CONCERT FORM */
+  .new-concert-form { display: none; background: #fff; border: 1.5px solid var(--gold); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
+  .new-concert-form.vis { display: block; }
+  .ncf-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .ncf-btns { display: flex; gap: 0.5rem; }
+  .ncf-label { display: block; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 5px; }
+  .ncf-input { width: 100%; border: 1.5px solid var(--line); border-radius: 7px; padding: 0.5rem 0.7rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink); background: var(--cream); outline: none; }
+  .ncf-input:focus { border-color: var(--gold); }
+  .btn-opprett { background: var(--gold); color: #fff; border: none; border-radius: 7px; padding: 0.55rem 1.1rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; }
+  .btn-avbryt { background: none; border: 1.5px solid var(--line); border-radius: 7px; padding: 0.55rem 0.9rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; color: #888; }
+
+  /* META BAR */
+  .meta-bar { background: var(--ink); color: var(--cream); border-radius: 12px; padding: 0.9rem 1.25rem; display: none; gap: 1.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .meta-bar.vis { display: flex; }
+  .meta-bar label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-light); display: block; margin-bottom: 2px; }
+  .meta-val { font-family: 'Playfair Display', serif; font-size: 0.95rem; color: #fff; }
+
+  /* ADD FORM */
+  .add-form { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 1.25rem; display: none; margin-bottom: 1.5rem; }
+  .add-form.vis { display: block; }
+  .add-form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .add-form-grid2 { display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .add-form-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .f-label { display: block; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 5px; font-weight: 500; }
+  .f-input { width: 100%; border: 1.5px solid var(--line); border-radius: 7px; padding: 0.5rem 0.75rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink); background: var(--cream); outline: none; }
+  .f-input:focus { border-color: var(--gold); background: #fff; }
+  .btn-add { background: var(--gold); color: #fff; border: none; border-radius: 7px; padding: 0.55rem 1.25rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; }
+  .btn-print { background: transparent; color: var(--ink); border: 1.5px solid var(--line); border-radius: 7px; padding: 0.55rem 0.9rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; }
+
+  /* TABLE */
+  .table-wrap { display: none; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: #fff; overflow-x: auto; }
+  .table-wrap.vis { display: block; }
+  table { width: 100%; border-collapse: collapse; min-width: 700px; }
+  thead th { background: var(--ink); color: var(--gold-light); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.8rem 0.75rem; text-align: left; font-weight: 500; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--line); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr.played { background: #f0faf4; }
+  tbody td { padding: 0.75rem 0.75rem; font-size: 0.9rem; vertical-align: middle; }
+  .num-col { color: #bbb; font-size: 0.78rem; width: 30px; }
+  .instrument-badge { display: inline-block; background: var(--cream); border: 1px solid var(--line); border-radius: 20px; padding: 2px 8px; font-size: 0.78rem; color: #666; }
+  .played-badge { background: #d4edda; border-color: #a8d5b5; color: var(--played); }
+  .duration { color: #777; font-size: 0.85rem; }
+  .check-cell { text-align: center; }
+  .check-cell input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--played); cursor: pointer; }
+  .del-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.95rem; padding: 0 3px; }
+  .del-btn:hover { color: var(--rust); }
+  .edit-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.95rem; padding: 0 3px; }
+  .edit-btn:hover { color: var(--gold); }
+  .edit-row td { background: #fffdf5; padding: 0.4rem 0.4rem !important; }
+  .edit-row input, .edit-row select { width: 100%; border: 1.5px solid var(--gold); border-radius: 5px; padding: 0.28rem 0.4rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; background: #fff; color: var(--ink); outline: none; }
+  .save-btn { background: var(--gold); color: #fff; border: none; border-radius: 5px; padding: 0.28rem 0.55rem; cursor: pointer; font-size: 0.82rem; font-family: 'DM Sans', sans-serif; margin-right: 3px; }
+  .cancel-btn { background: none; border: 1.5px solid #ccc; border-radius: 5px; padding: 0.28rem 0.55rem; cursor: pointer; font-size: 0.82rem; font-family: 'DM Sans', sans-serif; color: #888; }
+  .empty-state { text-align: center; padding: 2.5rem 1rem; color: #bbb; }
+  .empty-state p { font-size: 1rem; margin-top: 0.4rem; }
+
+  .stats { display: none; gap: 1.25rem; font-size: 0.8rem; color: #888; padding: 0.75rem 0.25rem; flex-wrap: wrap; }
+  .stats.vis { display: flex; }
+  .stats strong { color: var(--ink); }
+
+  /* PRINT HEADER */
+  #printInfo { display: none; margin-bottom: 1rem; }
+
+  @media (max-width: 600px) {
+    .add-form-grid { grid-template-columns: 1fr 1fr; }
+    .add-form-grid2 { grid-template-columns: 1fr 1fr; }
+    .ncf-grid { grid-template-columns: 1fr 1fr; }
+    .inst-badge { display: none; }
+  }
+
+  @media print {
+    @page { size: A4 landscape; margin: 12mm 15mm; }
+    #loginPage, .user-bar, .admin-tools, .concerts-section,
+    .new-concert-form, .add-form, .del-btn, .edit-btn, .edit-row,
+    .no-print, .btn-print { display: none !important; }
+    #printInfo { display: block !important; }
+    #appPage { padding: 0; }
+    body { background: #fff; }
+    .meta-bar { background: none !important; color: #000 !important; border: none; padding: 0; margin-bottom: 0.5rem; }
+    .meta-val { color: #000 !important; }
+    .table-wrap { border: 1px solid #ccc; overflow: visible; }
+    table { min-width: unset; }
+    tbody td:nth-child(2) { font-weight: 700; }
+    tbody td:nth-child(3) .instrument-badge { font-size: 1.1rem; padding: 3px 12px; }
+    #printLokasjon { font-weight: 700; font-size: 1.4rem !important; color: #000; font-family: 'Playfair Display', serif; }
+    #printDato { font-size: 1.4rem !important; font-family: 'Playfair Display', serif; font-weight: 700; }
+    th:last-child, td:last-child { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN PAGE ── -->
+<div id="loginPage">
+  <div class="login-box">
+    <h2>Konsert<span>liste</span></h2>
+    <p>Velg ditt navn for å logge inn</p>
+
+    <button class="login-admin-btn" onclick="loggInn('__admin__')">
+      🔑 Admin (alle rettigheter)
+    </button>
+
+    <hr class="login-divider">
+
+    <div class="login-names" id="loginNames"></div>
+  </div>
+</div>
+
+<!-- ── APP PAGE ── -->
+<div id="appPage">
+
+  <header>
+    <h1>Konsert<span>liste</span></h1>
+  </header>
+
+  <div class="user-bar">
+    <span>Innlogget som</span>
+    <span class="user-name" id="userBarName"></span>
+    <button class="logout-btn" onclick="loggUt()">Bytt bruker</button>
+  </div>
+
+  <!-- Admin tools -->
+  <div class="admin-tools" id="adminTools">
+    <button class="btn-tool" onclick="document.getElementById('importFil').click()">📂 Last inn JSON</button>
+    <input type="file" id="importFil" accept=".json" style="display:none" onchange="importerJSON(event)">
+    <button class="btn-tool" onclick="eksporterJSON()">💾 Lagre JSON</button>
+  </div>
+
+  <!-- Concert tabs -->
+  <div class="concerts-section">
+    <div class="concerts-label" id="faneTittel">Konserter</div>
+    <div class="tabs-row" id="tabsRow"></div>
+  </div>
+
+  <!-- New concert form (admin only) -->
+  <div class="new-concert-form" id="newConcertForm">
+    <div class="ncf-grid">
+      <div>
+        <label class="ncf-label">Dato</label>
+        <input type="date" id="ncDato" class="ncf-input">
+      </div>
+      <div>
+        <label class="ncf-label">Klokkeslett</label>
+        <select id="ncTid" class="ncf-input">
+          <option value="">— Velg —</option>
+          <option>16:00</option><option>16:30</option><option>17:00</option>
+          <option>17:30</option><option>18:00</option><option>18:30</option>
+        </select>
+      </div>
+      <div>
+        <label class="ncf-label">Lokasjon</label>
+        <select id="ncLokasjon" class="ncf-input">
+          <option value="">— Velg —</option>
+          <option>Orkestersalen</option><option>Pressverksalen</option>
+          <option>Kreativ</option><option>BandRom</option>
+        </select>
+      </div>
+    </div>
+    <div class="ncf-btns">
+      <button class="btn-opprett" onclick="opprettKonsert()">+ Opprett konsert</button>
+      <button class="btn-avbryt" onclick="skjulNyKonsertForm()">Avbryt</button>
+    </div>
+  </div>
+
+  <!-- Print header -->
+  <div id="printInfo">
+    <div style="display:flex;gap:2rem;align-items:baseline;border-bottom:2px solid #1a1a2e;padding-bottom:0.5rem;margin-bottom:1rem;">
+      <span id="printDato"></span>
+      <span id="printTid" style="font-size:1rem;color:#555;"></span>
+      <span id="printLokasjon" style="margin-left:auto;"></span>
+    </div>
+  </div>
+
+  <!-- Meta bar -->
+  <div class="meta-bar" id="metaBar">
+    <div><label>Dato</label><div class="meta-val" id="metaDato">—</div></div>
+    <div><label>Klokkeslett</label><div class="meta-val" id="metaTid">—</div></div>
+    <div><label>Lokasjon</label><div class="meta-val" id="metaLokasjon">—</div></div>
+  </div>
+
+  <!-- Add form -->
+  <div class="add-form" id="addForm">
+    <div class="add-form-grid">
+      <div>
+        <label class="f-label">Elev</label>
+        <input class="f-input" type="text" id="inpElev" placeholder="NAVN" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div>
+        <label class="f-label">Instrument</label>
+        <select class="f-input" id="inpInstrument"><option value="">— Velg —</option></select>
+      </div>
+      <div>
+        <label class="f-label">Stykkets navn</label>
+        <input class="f-input" type="text" id="inpStykke" placeholder="TITTEL" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      </div>
+    </div>
+    <div class="add-form-grid2">
+      <div>
+        <label class="f-label">Varighet (min)</label>
+        <input class="f-input" type="text" id="inpVarighet" placeholder="3,5 eller 3:30">
+      </div>
+      <div>
+        <label class="f-label">Merknader</label>
+        <input class="f-input" type="text" id="inpMerknader" placeholder="Valgfri...">
+      </div>
+      <div>
+        <label class="f-label">Lærer</label>
+        <select class="f-input" id="inpLærer"><option value="">— Velg instrument —</option></select>
+      </div>
+    </div>
+    <div class="add-form-btns">
+      <button class="btn-add" onclick="leggTil()">+ Legg til</button>
+      <button class="btn-print" onclick="window.print()">🖨 Skriv ut</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap" id="tableWrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="num-col">#</th>
+          <th>Elev</th>
+          <th>Instrument</th>
+          <th>Stykke</th>
+          <th>Varighet</th>
+          <th>Merknader</th>
+          <th>Lærer</th>
+          <th>Har spilt</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="listeBody">
+        <tr><td colspan="9"><div class="empty-state">🎵<p>Ingen innslag lagt til ennå</p></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="stats" id="statsBar">
+    <span>Innslag: <strong id="statTotal">0</strong></span>
+    <span class="no-print">Har spilt: <strong id="statPlayed">0</strong></span>
+    <span class="no-print">Gjenstår: <strong id="statLeft">0</strong></span>
+    <span>Est. varighet: <strong id="statVarighet">—</strong></span>
+  </div>
+
+</div><!-- end appPage -->
+
+<script>
+  // ── DATA ─────────────────────────────────────────────────
+  const instrumentListe = ['Sang','Piano','Gitar','Fiolin','Fiolingruppe','Fløyte','Klarinett','Saxofon','Trompet','Horn','Trombone','Tuba','Fagott','Trekkspill','Skarptromme','Trommesett','Marimba','Klokkespill','Orkester','Band'];
+
+  const lærere = {
+    'Sang':['Eva Therese'],'Piano':['Edin','Jakob'],'Trekkspill':['Agnes'],
+    'Gitar':['Bjørnar'],'Band':['Bjørnar'],'Trompet':['Håkan','Tom'],
+    'Fløyte':['Øystein'],'Saxofon':['Barbara'],'Klarinett':['Fredrik'],
+    'Fagott':['Fredrik'],'Horn':['Cecilie'],'Fiolin':['Tone'],
+    'Fiolingruppe':['Tone'],'Orkester':['Tone'],'Trombone':['Magne'],
+    'Tuba':['Magne','Gustav'],'Skarptromme':['Roger'],'Trommesett':['Roger'],
+    'Marimba':['Roger'],'Klokkespill':['Roger'],
+  };
+
+  const lærerInstrumenter = {
+    'Eva Therese':['Sang'],'Edin':['Piano'],'Jakob':['Piano'],
+    'Agnes':['Trekkspill'],'Bjørnar':['Gitar','Band'],'Håkan':['Trompet'],
+    'Tom':['Trompet'],'Øystein':['Fløyte'],'Barbara':['Saxofon'],
+    'Fredrik':['Klarinett','Fagott'],'Cecilie':['Horn'],
+    'Tone':['Fiolin','Fiolingruppe','Orkester'],'Magne':['Trombone','Tuba'],
+    'Gustav':['Tuba'],'Roger':['Skarptromme','Trommesett','Marimba','Klokkespill'],
+  };
+
+  const dager = ['SØNDAG','MANDAG','TIRSDAG','ONSDAG','TORSDAG','FREDAG','LØRDAG'];
+
+  // ── STATE ────────────────────────────────────────────────
+  let påloggetBruker = null;
+  let konserter = [];
+  let aktivKonsertId = null;
+  let editIdx = -1;
+
+  // ── STORAGE ──────────────────────────────────────────────
+  function lagreLokal() {
+    try { localStorage.setItem('konsertliste_v2', JSON.stringify(konserter)); } catch(e) {}
+  }
+  function lastLokal() {
+    try { const d = localStorage.getItem('konsertliste_v2'); if (d) konserter = JSON.parse(d); } catch(e) {}
+  }
+  function eksporterJSON() {
+    const blob = new Blob([JSON.stringify(konserter, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `konsertliste_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+  }
+  function importerJSON(event) {
+    const fil = event.target.files[0]; if (!fil) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        konserter = JSON.parse(e.target.result);
+        lagreLokal(); aktivKonsertId = null;
+        renderTabs(); skjulKonsertvisning();
+        alert('Data lastet inn!');
+      } catch { alert('Ugyldig JSON-fil.'); }
+    };
+    reader.readAsText(fil);
+    event.target.value = '';
+  }
+
+  // ── LOGIN ────────────────────────────────────────────────
+  function byggLoginListe() {
+    document.getElementById('loginNames').innerHTML =
+      Object.keys(lærerInstrumenter).map(navn =>
+        `<button class="login-name-btn" onclick="loggInn('${navn}')">
+          ${navn}<span class="inst-badge">${lærerInstrumenter[navn].join(', ')}</span>
+        </button>`
+      ).join('');
+  }
+
+  function loggInn(navn) {
+    påloggetBruker = navn;
+    document.getElementById('loginPage').classList.add('skjult');
+    document.getElementById('appPage').classList.add('vis');
+    document.getElementById('userBarName').textContent = navn === '__admin__' ? 'Admin' : navn;
+    if (navn === '__admin__') {
+      document.getElementById('adminTools').classList.add('vis');
+      document.getElementById('faneTittel').textContent = 'Konserter — Admin';
+    } else {
+      document.getElementById('faneTittel').textContent = 'Velg konsert';
+    }
+    renderTabs();
+    oppdaterInstrumentDropdown();
+  }
+
+  function loggUt() {
+    påloggetBruker = null; aktivKonsertId = null; editIdx = -1;
+    document.getElementById('loginPage').classList.remove('skjult');
+    document.getElementById('appPage').classList.remove('vis');
+    document.getElementById('adminTools').classList.remove('vis');
+    skjulNyKonsertForm();
+  }
+
+  // ── CONCERTS ─────────────────────────────────────────────
+  function formatTab(k) {
+    const d = new Date(k.dato + 'T00:00:00');
+    return `${k.lokasjon.toUpperCase()}  ${dager[d.getDay()]} ${d.getDate()}/${d.getMonth()+1} ${d.getFullYear()}  kl. ${k.tid}`;
+  }
+
+  function formatDato(k) {
+    const d = new Date(k.dato + 'T00:00:00');
+    return `${dager[d.getDay()]} ${d.getDate()}/${d.getMonth()+1} ${d.getFullYear()}`;
+  }
+
+  function renderTabs() {
+    const isAdmin = påloggetBruker === '__admin__';
+    let html = konserter.map(k => {
+      const aktiv = k.id === aktivKonsertId ? ' active' : '';
+      const del = isAdmin ? `<span class="tab-del" onclick="slettKonsert('${k.id}',event)">✕</span>` : '';
+      return `<button class="concert-tab${aktiv}" onclick="velgKonsert('${k.id}')">${formatTab(k)}${del}</button>`;
+    }).join('');
+    if (konserter.length === 0) html = `<span style="color:#bbb;font-size:0.85rem;">Ingen konserter ennå.</span>`;
+    if (isAdmin) html += `<button class="btn-new-concert" onclick="visNyKonsertForm()">+ Ny konsert</button>`;
+    document.getElementById('tabsRow').innerHTML = html;
+  }
+
+  function visNyKonsertForm() { document.getElementById('newConcertForm').classList.add('vis'); }
+  function skjulNyKonsertForm() {
+    document.getElementById('newConcertForm').classList.remove('vis');
+    document.getElementById('ncDato').value = '';
+    document.getElementById('ncTid').selectedIndex = 0;
+    document.getElementById('ncLokasjon').selectedIndex = 0;
+  }
+
+  function opprettKonsert() {
+    const dato = document.getElementById('ncDato').value;
+    const tid = document.getElementById('ncTid').value;
+    const lokasjon = document.getElementById('ncLokasjon').value;
+    if (!dato || !tid || !lokasjon) { alert('Fyll ut dato, tid og lokasjon.'); return; }
+    const id = 'k_' + Date.now();
+    konserter.push({ id, dato, tid, lokasjon, innslag: [] });
+    lagreLokal(); skjulNyKonsertForm(); renderTabs(); velgKonsert(id);
+  }
+
+  function slettKonsert(id, event) {
+    event.stopPropagation();
+    const k = konserter.find(k => k.id === id);
+    if (!confirm(`Slette "${formatTab(k)}"?`)) return;
+    konserter = konserter.filter(k => k.id !== id);
+    lagreLokal();
+    if (aktivKonsertId === id) { aktivKonsertId = null; skjulKonsertvisning(); }
+    renderTabs();
+  }
+
+  function velgKonsert(id) {
+    aktivKonsertId = id; editIdx = -1;
+    renderTabs(); visKonsertvisning();
+  }
+
+  function aktivKonsert() { return konserter.find(k => k.id === aktivKonsertId) || null; }
+
+  function visKonsertvisning() {
+    const k = aktivKonsert(); if (!k) return;
+    document.getElementById('metaDato').textContent = formatDato(k);
+    document.getElementById('metaTid').textContent = `kl. ${k.tid}`;
+    document.getElementById('metaLokasjon').textContent = k.lokasjon;
+    document.getElementById('printDato').textContent = formatDato(k);
+    document.getElementById('printTid').textContent = `kl. ${k.tid}`;
+    document.getElementById('printLokasjon').textContent = k.lokasjon;
+    document.getElementById('metaBar').classList.add('vis');
+    document.getElementById('addForm').classList.add('vis');
+    document.getElementById('tableWrap').classList.add('vis');
+    oppdaterInstrumentDropdown();
+    render();
+  }
+
+  function skjulKonsertvisning() {
+    document.getElementById('metaBar').classList.remove('vis');
+    document.getElementById('addForm').classList.remove('vis');
+    document.getElementById('tableWrap').classList.remove('vis');
+    document.getElementById('statsBar').classList.remove('vis');
+  }
+
+  // ── DROPDOWNS ────────────────────────────────────────────
+  function oppdaterInstrumentDropdown() {
+    const instSel = document.getElementById('inpInstrument');
+    const lærSel  = document.getElementById('inpLærer');
+    const liste = (påloggetBruker && påloggetBruker !== '__admin__')
+      ? (lærerInstrumenter[påloggetBruker] || instrumentListe) : instrumentListe;
+    instSel.innerHTML = `<option value="">— Velg —</option>` + liste.map(i => `<option>${i}</option>`).join('');
+    if (liste.length === 1) { instSel.value = liste[0]; oppdaterLærerDropdown(instSel, lærSel); }
+    else lærSel.innerHTML = `<option value="">— Velg instrument —</option>`;
+  }
+
+  function oppdaterLærerDropdown(instSel, lærSel) {
+    const alle = lærere[instSel.value] || [];
+    const filtrert = (påloggetBruker && påloggetBruker !== '__admin__')
+      ? alle.filter(l => l === påloggetBruker) : alle;
+    lærSel.innerHTML = filtrert.length
+      ? filtrert.map(l => `<option>${l}</option>`).join('')
+      : `<option value="">— Ingen lærer —</option>`;
+  }
+
+  document.getElementById('inpInstrument').addEventListener('change', function() {
+    oppdaterLærerDropdown(this, document.getElementById('inpLærer'));
+  });
+
+  // ── VARIGHET ─────────────────────────────────────────────
+  function normaliserVarighet(v) {
+    if (!v) return '';
+    v = v.trim().replace(',', '.');
+    if (/^\d+:\d{1,2}$/.test(v)) {
+      const [min, sek] = v.split(':').map(Number);
+      return `${Math.round((min + sek/60)*2)/2} min`;
+    }
+    const num = parseFloat(v);
+    return isNaN(num) ? v : `${Math.round(num*2)/2} min`;
+  }
+
+  function varighetTilSek(v) {
+    const m = v && v.match(/^([\d.]+)\s*min$/);
+    return m ? parseFloat(m[1])*60 : 0;
+  }
+
+  // ── CRUD ─────────────────────────────────────────────────
+  function kanRedigere(item) {
+    if (!påloggetBruker) return false;
+    if (påloggetBruker === '__admin__') return true;
+    return item.lærer === påloggetBruker;
+  }
+
+  function leggTil() {
+    const k = aktivKonsert(); if (!k) return;
+    const elev       = document.getElementById('inpElev').value.trim();
+    const instrument = document.getElementById('inpInstrument').value;
+    const stykke     = document.getElementById('inpStykke').value.trim();
+    const varighet   = normaliserVarighet(document.getElementById('inpVarighet').value);
+    const merknader  = document.getElementById('inpMerknader').value.trim();
+    const lærer      = document.getElementById('inpLærer').value;
+    if (!elev || !instrument || !stykke) { alert('Fyll ut elev, instrument og stykke.'); return; }
+    k.innslag.push({ elev, instrument, stykke, varighet, merknader, lærer, spilt: false });
+    lagreLokal();
+    ['inpElev','inpStykke','inpVarighet','inpMerknader'].forEach(id => document.getElementById(id).value='');
+    oppdaterInstrumentDropdown();
+    document.getElementById('inpElev').focus();
+    render();
+  }
+
+  function toggleSpilt(idx) {
+    const k = aktivKonsert(); if (!k) return;
+    k.innslag[idx].spilt = !k.innslag[idx].spilt;
+    lagreLokal(); render();
+  }
+
+  function slett(idx) {
+    const k = aktivKonsert(); if (!k || !kanRedigere(k.innslag[idx])) return;
+    k.innslag.splice(idx, 1); lagreLokal(); render();
+  }
+
+  function rediger(idx) {
+    const k = aktivKonsert(); if (!k || !kanRedigere(k.innslag[idx])) return;
+    editIdx = idx; render();
+  }
+
+  function avbrytRediger() { editIdx = -1; render(); }
+
+  function oppdaterEditLærer(idx) {
+    oppdaterLærerDropdown(
+      document.getElementById(`editInstrument_${idx}`),
+      document.getElementById(`editLærer_${idx}`)
+    );
+  }
+
+  function lagreRediger(idx) {
+    const k = aktivKonsert(); if (!k) return;
+    const elev       = document.getElementById(`editElev_${idx}`).value.trim();
+    const instrument = document.getElementById(`editInstrument_${idx}`).value;
+    const stykke     = document.getElementById(`editStykke_${idx}`).value.trim();
+    const varighet   = normaliserVarighet(document.getElementById(`editVarighet_${idx}`).value);
+    const merknader  = document.getElementById(`editMerknader_${idx}`).value.trim();
+    const lærer      = document.getElementById(`editLærer_${idx}`).value;
+    if (!elev || !instrument || !stykke) { alert('Fyll ut elev, instrument og stykke.'); return; }
+    k.innslag[idx] = { ...k.innslag[idx], elev, instrument, stykke, varighet, merknader, lærer };
+    lagreLokal(); editIdx = -1; render();
+  }
+
+  // ── RENDER ───────────────────────────────────────────────
+  function render() {
+    const k = aktivKonsert(); if (!k) return;
+    const innslag = k.innslag;
+    const tbody = document.getElementById('listeBody');
+    const statsBar = document.getElementById('statsBar');
+
+    if (innslag.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">🎵<p>Ingen innslag lagt til ennå</p></div></td></tr>`;
+      statsBar.classList.remove('vis'); return;
+    }
+
+    statsBar.classList.add('vis');
+    const spilt = innslag.filter(i => i.spilt).length;
+    document.getElementById('statTotal').textContent  = innslag.length;
+    document.getElementById('statPlayed').textContent = spilt;
+    document.getElementById('statLeft').textContent   = innslag.length - spilt;
+    let totalSek = 0, harVar = false;
+    innslag.forEach(item => { const s = varighetTilSek(item.varighet); if(s>0){totalSek+=s;harVar=true;} });
+    document.getElementById('statVarighet').textContent = harVar ? `${Math.round(totalSek/60*2)/2} min` : '—';
+
+    const editListe = (påloggetBruker && påloggetBruker !== '__admin__')
+      ? (lærerInstrumenter[påloggetBruker] || instrumentListe) : instrumentListe;
+
+    tbody.innerHTML = innslag.map((item, idx) => {
+      if (idx === editIdx) {
+        const iOpts = editListe.map(i => `<option${i===item.instrument?' selected':''}>${i}</option>`).join('');
+        const lOpts = (lærere[item.instrument]||[]).map(l => `<option${l===item.lærer?' selected':''}>${l}</option>`).join('') || `<option>— Ingen —</option>`;
+        return `<tr class="edit-row">
+          <td>${idx+1}</td>
+          <td><input id="editElev_${idx}" value="${item.elev}" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"></td>
+          <td><select id="editInstrument_${idx}" onchange="oppdaterEditLærer(${idx})">${iOpts}</select></td>
+          <td><input id="editStykke_${idx}" value="${item.stykke}" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"></td>
+          <td><input id="editVarighet_${idx}" value="${item.varighet}" style="width:70px"></td>
+          <td><input id="editMerknader_${idx}" value="${item.merknader||''}"></td>
+          <td><select id="editLærer_${idx}">${lOpts}</select></td>
+          <td class="check-cell"><input type="checkbox" ${item.spilt?'checked':''} onchange="toggleSpilt(${idx})"></td>
+          <td style="white-space:nowrap">
+            <button class="save-btn" onclick="lagreRediger(${idx})">✓</button>
+            <button class="cancel-btn" onclick="avbrytRediger()">✕</button>
+          </td>
+        </tr>`;
+      }
+      return `<tr class="${item.spilt?'played':''}">
+        <td class="num-col">${idx+1}</td>
+        <td>${item.elev}</td>
+        <td><span class="instrument-badge${item.spilt?' played-badge':''}">${item.instrument}</span></td>
+        <td>${item.stykke}</td>
+        <td class="duration">${item.varighet||'—'}</td>
+        <td style="color:#666;font-size:0.85rem">${item.merknader||''}</td>
+        <td>${item.lærer||'—'}</td>
+        <td class="check-cell"><input type="checkbox" ${item.spilt?'checked':''} onchange="toggleSpilt(${idx})"></td>
+        <td style="white-space:nowrap">
+          ${kanRedigere(item)?`<button class="del-btn" onclick="slett(${idx})">✕</button><button class="edit-btn" onclick="rediger(${idx})">✏️</button>`:''}
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.activeElement.closest('.add-form')) leggTil();
+  });
+
+  // ── INIT ─────────────────────────────────────────────────
+  lastLokal();
+  byggLoginListe();
+</script>
+</body>
+</html>
