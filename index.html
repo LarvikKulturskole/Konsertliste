@@ -1,0 +1,2397 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Konsertliste</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --cream: #f8f4ed;
+    --gold: #c9963b;
+    --gold-light: #e8c97a;
+    --rust: #8b3a3a;
+    --line: #d4c9b5;
+    --played: #2d6a4f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+
+  /* ── LOGIN PAGE ── */
+  #loginPage {
+    min-height: 100vh;
+    background: var(--ink);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+  #loginPage.skjult { display: none; }
+
+  .login-box {
+    background: var(--cream);
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .login-box h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-bottom: 0.2rem; text-align: center; }
+  .login-box h2 span { color: var(--gold); }
+  .login-box p { color: #888; font-size: 0.9rem; margin-bottom: 1rem; text-align: center; }
+
+  .login-admin-btn {
+    display: block;
+    width: 100%;
+    background: var(--ink);
+    color: var(--gold-light);
+    border: 2px solid var(--gold);
+    border-radius: 10px;
+    padding: 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    margin-bottom: 1rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .login-admin-btn:active { background: #2d2d4e; }
+
+  .login-divider { border: none; border-top: 1px solid var(--line); margin-bottom: 1rem; }
+
+  .login-names { display: flex; flex-direction: column; gap: 0.5rem; }
+  .login-name-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    background: #fff;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .login-name-btn:active { border-color: var(--gold); background: #fffdf5; }
+  .inst-badge { font-size: 0.72rem; background: var(--cream); border: 1px solid var(--line); border-radius: 20px; padding: 2px 8px; color: #888; margin-left: auto; white-space: nowrap; }
+
+  /* ── MAIN APP ── */
+  #appPage { display: none; padding: 1.5rem 1rem 4rem; }
+  #appPage.vis { display: block; }
+
+  header { text-align: center; margin-bottom: 1.25rem; }
+  header::after { content: ''; display: block; width: 60px; height: 3px; background: var(--gold); margin: 0.6rem auto 0; }
+  h1 { font-family: 'Playfair Display', serif; font-size: clamp(1.6rem, 5vw, 2.8rem); }
+  h1 span { color: var(--gold); }
+
+  .user-bar { display: flex; align-items: center; gap: 0.6rem; background: var(--ink); color: var(--cream); padding: 0.5rem 1rem; border-radius: 30px; font-size: 0.82rem; margin: 0 auto 1.25rem; width: fit-content; flex-wrap: wrap; justify-content: center; }
+  .user-name { font-weight: 600; color: var(--gold-light); }
+  .logout-btn { background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.45); color: #fff; border-radius: 20px; padding: 4px 13px; font-size: 0.8rem; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; transition: background 0.15s, border-color 0.15s; }
+  .logout-btn:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.7); }
+  .logout-btn-hjelp { background: var(--gold) !important; border-color: var(--gold) !important; color: #fff !important; }
+  .logout-btn-hjelp:hover { background: #a87a28 !important; border-color: #a87a28 !important; }
+
+  /* ADMIN TOOLS */
+  .admin-tools { display: none; justify-content: flex-end; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .admin-tools.vis { display: flex; }
+  .btn-tool { background: none; border: 1.5px solid var(--line); border-radius: 7px; padding: 0.4rem 0.85rem; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer; color: var(--ink); }
+  .btn-tool:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* TABS */
+  .concerts-section { margin-bottom: 1.25rem; }
+  .concerts-label { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa; margin-bottom: 0.6rem; }
+  /* CONCERT GRID */
+  .concerts-section { margin-bottom: 1.5rem; }
+  .concerts-label { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa; margin-bottom: 0.75rem; }
+  .lokasjon-grid { display: flex; flex-direction: column; gap: 0.5rem; }
+  .lokasjon-rad { display: flex; align-items: stretch; gap: 0; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--line); background: #fff; min-height: 56px; }
+  .lokasjon-label { background: var(--ink); color: var(--gold-light); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; padding: 0 1.1rem; display: flex; align-items: center; min-width: 145px; width: 145px; flex-shrink: 0; font-family: 'DM Sans', sans-serif; text-transform: uppercase; }
+  .lokasjon-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.5rem 0.6rem; align-items: center; flex: 1; }
+  .concert-tab { background: var(--cream); border: 1.5px solid var(--line); border-radius: 8px; padding: 0.6rem 1.1rem; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink); display: inline-flex; align-items: center; gap: 0.4rem; -webkit-tap-highlight-color: transparent; white-space: nowrap; transition: border-color 0.15s, background 0.15s; font-weight: 500; }
+  .concert-tab:hover { border-color: var(--gold); background: #fffdf5; }
+
+
+  /* Tutorial modal */
+  .tut-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:600; align-items:center; justify-content:center; padding:1rem; }
+  .tut-overlay.vis { display:flex; }
+  .tut-box { background:#fff; border-radius:16px; width:min(680px,96vw); max-height:88vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 16px 60px rgba(0,0,0,0.35); }
+  .tut-header { background:var(--ink); color:var(--cream); padding:1.2rem 1.5rem; display:flex; align-items:center; gap:1rem; }
+  .tut-header h2 { font-family:'Playfair Display',serif; font-size:1.3rem; margin:0; flex:1; }
+  .tut-header .tut-close { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); color:#fff; border-radius:7px; padding:0.3rem 0.75rem; cursor:pointer; font-size:0.85rem; font-family:'DM Sans',sans-serif; }
+  .tut-tabs { display:flex; border-bottom:2px solid #eee; background:#fafafa; }
+  .tut-tab { padding:0.7rem 1.25rem; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.85rem; color:#888; border-bottom:2px solid transparent; margin-bottom:-2px; transition:color 0.15s; white-space:nowrap; }
+  .tut-tab.active { color:var(--ink); border-bottom-color:var(--gold); font-weight:600; }
+  .tut-body { overflow-y:auto; padding:1.5rem; flex:1; }
+  .tut-section { margin-bottom:1.5rem; }
+  .tut-section:last-child { margin-bottom:0; }
+  .tut-section h3 { font-family:'Playfair Display',serif; font-size:1rem; color:var(--ink); margin:0 0 0.5rem; display:flex; align-items:center; gap:0.5rem; }
+  .tut-section p, .tut-section li { font-size:0.88rem; color:#444; line-height:1.65; margin:0 0 0.3rem; }
+  .tut-section ul { padding-left:1.2rem; margin:0.3rem 0; }
+  .tut-badge { display:inline-block; background:var(--ink); color:var(--gold-light); border-radius:5px; padding:1px 7px; font-size:0.75rem; font-family:'DM Sans',sans-serif; vertical-align:middle; }
+  .tut-badge.gold { background:var(--gold); color:#fff; }
+  .tut-badge.blue { background:#3b82c4; color:#fff; }
+  .tut-footer { padding:1rem 1.5rem; border-top:1px solid #eee; display:flex; justify-content:flex-end; }
+  .tut-ok-btn { background:var(--gold); color:#fff; border:none; border-radius:8px; padding:0.6rem 1.5rem; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; cursor:pointer; }
+
+
+  /* Firebase sync indicator */
+  #fbStatus { display:none; position:fixed; bottom:1rem; right:1rem; background:var(--ink); color:var(--cream); border-radius:20px; padding:0.35rem 0.85rem; font-size:0.75rem; font-family:'DM Sans',sans-serif; align-items:center; gap:0.4rem; z-index:500; box-shadow:0 2px 12px rgba(0,0,0,0.2); transition:opacity 0.5s; }
+  #fbStatus .fb-dot { width:8px; height:8px; border-radius:50%; background:#4caf50; animation:fbpulse 2s infinite; }
+  @keyframes fbpulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  #fbStatus.syncing .fb-dot { background:var(--gold); }
+
+
+  /* Tab progress bar */
+  .tab-wrap { position: relative; display: inline-block; }
+  .tab-progress { position: absolute; bottom: 0; left: 0; height: 5px; border-radius: 0 0 8px 8px; pointer-events: none; transition: width 0.3s, background 0.3s; }
+
+
+  /* Bekreftelsesdialog */
+  .bekreft-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
+  .bekreft-overlay.vis { display:flex; }
+  .bekreft-box { background:#fff; border-radius:12px; padding:1.5rem; max-width:340px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.3); text-align:center; }
+  .bekreft-tekst { font-family:'DM Sans',sans-serif; font-size:0.95rem; color:var(--ink); margin-bottom:1.25rem; line-height:1.5; }
+  .bekreft-btns { display:flex; gap:0.75rem; justify-content:center; }
+  .bekreft-ok { background:var(--rust); color:#fff; border:none; border-radius:8px; padding:0.6rem 1.4rem; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; cursor:pointer; }
+  .bekreft-avbryt { background:none; border:1.5px solid var(--line); border-radius:8px; padding:0.6rem 1.2rem; font-family:'DM Sans',sans-serif; font-size:0.9rem; cursor:pointer; color:#888; }
+
+
+  /* Legg til på hjemskjerm */
+  .pwa-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:900; align-items:flex-end; justify-content:center; padding:1rem; }
+  .pwa-overlay.vis { display:flex; }
+  .pwa-box { background:#fff; border-radius:16px 16px 16px 16px; padding:1.5rem; width:min(420px,96vw); box-shadow:0 -4px 32px rgba(0,0,0,0.2); }
+  .pwa-box h3 { font-family:'Playfair Display',serif; font-size:1.1rem; margin:0 0 0.75rem; color:var(--ink); }
+  .pwa-steg { font-size:0.88rem; color:#444; line-height:1.7; }
+  .pwa-steg b { color:var(--ink); }
+  .pwa-url { background:#f5f5f5; border-radius:8px; padding:0.5rem 0.75rem; font-size:0.8rem; font-family:monospace; margin:0.75rem 0; word-break:break-all; color:#333; }
+  .pwa-lukk { margin-top:1rem; width:100%; background:var(--ink); color:#fff; border:none; border-radius:8px; padding:0.7rem; font-family:'DM Sans',sans-serif; font-size:0.95rem; cursor:pointer; }
+
+  /* Tab tooltip */
+  .tab-wrap { position: relative; display: inline-block; }
+  .tab-tooltip {
+    visibility: hidden; opacity: 0;
+    position: fixed;
+    background: var(--ink); color: var(--cream);
+    border-radius: 8px; padding: 0.5rem 0.8rem;
+    font-size: 0.78rem; font-family: 'DM Sans', sans-serif;
+    white-space: nowrap; pointer-events: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    transition: opacity 0.15s, visibility 0.15s;
+    z-index: 9999; line-height: 1.7;
+  }
+  .tab-wrap:hover .tab-tooltip { visibility: visible; opacity: 1; }
+
+  .concert-tab.active { background: var(--gold); color: #fff; border-color: var(--gold); }
+  .tab-group { display: inline-flex; align-items: stretch; border-radius: 8px; overflow: hidden; border: 1.5px solid var(--line); }
+  .tab-group .concert-tab { border-radius: 0; border: none; border-right: 1px solid var(--line); }
+  .tab-group .concert-tab.active { border-right-color: rgba(255,255,255,0.3); }
+  .tab-slett-btn { background: var(--cream); border: none; color: #bbb; cursor: pointer; padding: 0 8px; font-size: 0.85rem; line-height: 1; }
+  .tab-slett-btn:hover { background: #fdecea; color: var(--rust); }
+  .tab-del { color: rgba(255,255,255,0.6); padding: 0 2px; font-size: 0.75rem; }
+  .concert-tab:not(.active) .tab-del { color: #bbb; }
+  .concert-tab:not(.active) .tab-del:hover { color: var(--rust); }
+  .ingen-tabs { color: #bbb; font-size: 0.82rem; padding: 0.2rem 0; }
+  .btn-new-concert { background: var(--gold); color: #fff; border: none; border-radius: 8px; padding: 0.5rem 1rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
+  .btn-new-concert:hover { background: #a87a28; }
+
+  /* NEW CONCERT FORM */
+  .new-concert-form { display: none; background: #fff; border: 1.5px solid var(--gold); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
+  .new-concert-form.vis { display: block; }
+  .ncf-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .ncf-btns { display: flex; gap: 0.5rem; }
+  .ncf-label { display: block; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 5px; }
+  .ncf-input { width: 100%; border: 1.5px solid var(--line); border-radius: 7px; padding: 0.5rem 0.7rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink); background: var(--cream); outline: none; }
+  .ncf-input:focus { border-color: var(--gold); }
+  .btn-opprett { background: var(--gold); color: #fff; border: none; border-radius: 7px; padding: 0.55rem 1.1rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; }
+  .btn-avbryt { background: none; border: 1.5px solid var(--line); border-radius: 7px; padding: 0.55rem 0.9rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; color: #888; }
+
+  /* META BAR */
+  .meta-bar { background: var(--ink); color: var(--cream); border-radius: 12px; padding: 0.9rem 1.25rem; display: none; gap: 1.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .meta-bar.vis { display: flex; }
+  .meta-bar label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-light); display: block; margin-bottom: 2px; }
+  .meta-val { font-family: 'Playfair Display', serif; font-size: 0.95rem; color: #fff; }
+
+  /* ADD FORM */
+  .add-form { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 1.25rem; display: none; margin-bottom: 1.5rem; }
+  .add-form.vis { display: block; }
+  .add-form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .add-form-grid2 { display: grid; grid-template-columns: 1fr 1fr 1.5fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .add-form-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .f-label { display: block; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 5px; font-weight: 500; }
+  .f-input { width: 100%; border: 1.5px solid var(--line); border-radius: 7px; padding: 0.5rem 0.75rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink); background: var(--cream); outline: none; }
+  .f-input:focus { border-color: var(--gold); background: #fff; }
+  .btn-add { background: var(--gold); color: #fff; border: none; border-radius: 7px; padding: 0.55rem 1.25rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; }
+  .btn-print { background: transparent; color: var(--ink); border: 1.5px solid var(--line); border-radius: 7px; padding: 0.55rem 0.9rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; }
+
+  /* TABLE */
+  .table-wrap { display: none; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: #fff; overflow-x: auto; }
+  .table-wrap.vis { display: block; }
+  table { width: 100%; border-collapse: collapse; min-width: 700px; }
+  .th-lærer-wrap { display: flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
+  .lærer-filter-btn { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: var(--gold-light); border-radius: 4px; padding: 1px 6px; font-size: 0.65rem; cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
+  .lærer-filter-btn:hover { background: rgba(255,255,255,0.25); }
+  .lærer-filter-btn.aktiv { background: var(--gold); border-color: var(--gold); color: #fff; }
+  .lærer-filter-popup { position: absolute; background: var(--ink); border: 1px solid var(--gold); border-radius: 8px; padding: 0.4rem 0; z-index: 100; min-width: 160px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); top: 100%; left: 0; }
+  .lærer-filter-popup button { display: block; width: 100%; text-align: left; background: none; border: none; color: var(--cream); padding: 0.35rem 0.85rem; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer; }
+  .lærer-filter-popup button:hover { background: rgba(255,255,255,0.1); }
+  .lærer-filter-popup button.aktiv { color: var(--gold); font-weight: 600; }
+  .th-lærer-pos { position: relative; }
+  thead th { background: var(--ink); color: var(--gold-light); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.8rem 0.75rem; text-align: left; font-weight: 500; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--line); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr.played { background: #f0faf4; }
+  tbody td { padding: 0.75rem 0.75rem; font-size: 0.9rem; vertical-align: middle; }
+  .num-col { color: #bbb; font-size: 0.78rem; width: 30px; }
+  .instrument-badge { display: inline-block; background: var(--cream); border: 1px solid var(--line); border-radius: 20px; padding: 2px 8px; font-size: 0.78rem; color: #666; }
+  .played-badge { background: #d4edda; border-color: #a8d5b5; color: var(--played); }
+  .duration { color: #777; font-size: 0.85rem; }
+  .check-cell { text-align: center; }
+  .check-cell input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--played); cursor: pointer; }
+  .del-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.95rem; padding: 0 3px; }
+  .del-btn:hover { color: var(--rust); }
+  .edit-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.95rem; padding: 0 3px; }
+  .edit-btn:hover { color: var(--gold); }
+  .edit-row td { background: #fffdf5; padding: 0.4rem 0.4rem !important; }
+  .edit-row input, .edit-row select { width: 100%; border: 1.5px solid var(--gold); border-radius: 5px; padding: 0.28rem 0.4rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; background: #fff; color: var(--ink); outline: none; }
+  .save-btn { background: var(--gold); color: #fff; border: none; border-radius: 5px; padding: 0.28rem 0.55rem; cursor: pointer; font-size: 0.82rem; font-family: 'DM Sans', sans-serif; margin-right: 3px; }
+  .cancel-btn { background: none; border: 1.5px solid #ccc; border-radius: 5px; padding: 0.28rem 0.55rem; cursor: pointer; font-size: 0.82rem; font-family: 'DM Sans', sans-serif; color: #888; }
+  .empty-state { text-align: center; padding: 2.5rem 1rem; color: #bbb; }
+  .empty-state p { font-size: 1rem; margin-top: 0.4rem; }
+
+  /* Move feature */
+  .move-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.9rem; padding: 0 3px; }
+  .move-btn:hover { color: #5b9bd5; }
+  tbody tr.valgt { background: #fff8e8 !important; }
+  .sel-col { width: 28px; text-align: center; }
+
+  .flytt-bar { display: none; align-items: center; gap: 1rem; background: var(--gold); color: #fff; border-radius: 10px; padding: 0.6rem 1.25rem; margin-bottom: 1rem; font-size: 0.9rem; flex-wrap: wrap; }
+  .flytt-bar.vis { display: flex; }
+  .flytt-bar .flytt-knapp { background: #fff; color: var(--gold); border: none; border-radius: 6px; padding: 0.35rem 0.85rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+  .flytt-bar .avbryt-flytt { background: rgba(255,255,255,0.25); color: #fff; border: none; border-radius: 6px; padding: 0.35rem 0.75rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; margin-left: auto; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 500; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-overlay.vis { display: flex; }
+  .modal-box { background: var(--cream); border-radius: 14px; padding: 1.5rem; width: min(420px, 92vw); box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+  .modal-box h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; margin-bottom: 0.4rem; }
+  .modal-box p { color: #888; font-size: 0.85rem; margin-bottom: 1rem; }
+  .modal-konsert-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; max-height: 50vh; overflow-y: auto; }
+  .modal-konsert-btn { background: #fff; border: 1.5px solid var(--line); border-radius: 8px; padding: 0.65rem 1rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink); cursor: pointer; text-align: left; width: 100%; }
+  .modal-konsert-btn:hover { border-color: var(--gold); background: #fffdf5; }
+  .modal-avbryt { background: none; border: 1.5px solid var(--line); border-radius: 7px; padding: 0.5rem 1rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; color: #888; }
+
+  .stats { display: none; gap: 1.25rem; font-size: 0.8rem; color: #888; padding: 0.75rem 0.25rem; flex-wrap: wrap; }
+  .stats.vis { display: flex; }
+  .stats strong { color: var(--ink); }
+
+  /* PRINT HEADER */
+  #printInfo { display: none; margin-bottom: 1rem; }
+
+  @media (max-width: 600px) {
+    .add-form-grid { grid-template-columns: 1fr 1fr; }
+    .add-form-grid2 { grid-template-columns: 1fr 1fr; }
+    .ncf-grid { grid-template-columns: 1fr 1fr; }
+    .lokasjon-label { min-width: 90px; width: 90px; font-size: 0.65rem; padding: 0 0.5rem; letter-spacing: 0; }
+    .concert-tab { font-size: 0.8rem; padding: 0.45rem 0.7rem; }
+    .inst-badge { display: none; }
+  }
+
+  @media print {
+    @page { size: A4 landscape; margin: 12mm 15mm; }
+    #loginPage, .user-bar, .admin-tools, .concerts-section,
+    .new-concert-form, .add-form, .del-btn, .edit-btn, .edit-row,
+    .no-print, .btn-print { display: none !important; }
+    #printInfo { display: block !important; }
+    #appPage { padding: 0; }
+    body { background: #fff; }
+    .meta-bar { background: none !important; color: #000 !important; border: none; padding: 0; margin-bottom: 0.5rem; }
+    .meta-val { color: #000 !important; }
+    .table-wrap { border: 1px solid #ccc; overflow: visible; }
+    table { min-width: unset; }
+    tbody td:nth-child(2) { font-weight: 700; }
+    tbody td:nth-child(3) .instrument-badge { font-size: 1.1rem; padding: 3px 12px; }
+    #printLokasjon { font-weight: 700; font-size: 1.4rem !important; color: #000; font-family: 'Playfair Display', serif; }
+    #printDato { font-size: 1.4rem !important; font-family: 'Playfair Display', serif; font-weight: 700; }
+    th:last-child, td:last-child { display: none !important; }
+    .sel-col { display: none !important; }
+    .har-spilt-col { display: none !important; }
+    .flytt-bar { display: none !important; }
+  }
+
+  /* ── ELEVREGISTER ── */
+  /* ─ ANSVARLIG TAB (blå) ─ */
+  .concert-tab.ansvarlig-tab { border-color: #3b82c4; color: #3b82c4; background: #f0f5ff; }
+  .concert-tab.ansvarlig-tab:hover { border-color: #2563a8; background: #e0edff; }
+  .concert-tab.ansvarlig-tab.active { background: #3b82c4; border-color: #3b82c4; color: #fff; }
+
+  /* ─ MINE ELEVER BAR ─ */
+  .mine-elever-bar { display: none; justify-content: flex-end; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .mine-elever-bar.vis { display: flex; }
+  .mine-elever-sok-wrap { position: relative; }
+  .mine-elever-sok-input { border: 1.5px solid var(--line); border-radius: 8px; padding: 0.45rem 0.85rem; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; width: 220px; outline: none; background: #fff; }
+  .mine-elever-sok-input:focus { border-color: #3b82c4; }
+  .mine-elever-sok-res { position: absolute; top: calc(100% + 5px); right: 0; background: #fff; border: 1.5px solid var(--line); border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); z-index: 400; min-width: 320px; max-height: 320px; overflow-y: auto; display: none; }
+  .mine-elever-sok-res.vis { display: block; }
+  .mes-item { display: flex; align-items: center; padding: 0.6rem 0.85rem; gap: 0.75rem; border-bottom: 1px solid var(--line); }
+  .mes-item:last-child { border-bottom: none; }
+  .mes-item:hover { background: #fffdf5; }
+  .mes-navn { flex: 1; }
+  .mes-navn strong { font-size: 0.88rem; display: block; }
+  .mes-navn span { font-size: 0.75rem; color: #888; }
+  .mes-btn { background: #3b82c4; color: #fff; border: none; border-radius: 5px; padding: 0.28rem 0.65rem; font-size: 0.78rem; cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; flex-shrink: 0; }
+  .mes-btn:hover { background: #2563a8; }
+  .mes-tom { padding: 0.75rem 1rem; color: #aaa; font-size: 0.85rem; text-align: center; }
+  .btn-mine-elever { background: none; border: 1.5px solid #3b82c4; border-radius: 7px; padding: 0.4rem 0.85rem; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer; color: #3b82c4; font-weight: 600; }
+  .btn-mine-elever:hover { background: #3b82c4; color: #fff; }
+
+  /* ─ MINE ELEVER MODAL ─ */
+  .mine-modal { display: none; position: fixed; inset: 0; z-index: 610; background: rgba(0,0,0,0.55); align-items: flex-start; justify-content: center; padding: 1.5rem 1rem; overflow-y: auto; }
+  .mine-modal.vis { display: flex; }
+  .mine-box { background: var(--cream); border-radius: 16px; width: min(820px,96vw); box-shadow: 0 16px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; max-height: 88vh; }
+  .mine-hdr { background: var(--ink); color: var(--cream); border-radius: 16px 16px 0 0; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 0.75rem; }
+  .mine-hdr h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--gold-light); flex: 1; margin: 0; }
+  .mine-hbtn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); color: #fff; border-radius: 7px; padding: 0.38rem 0.75rem; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; cursor: pointer; }
+  .mine-hbtn:hover { background: rgba(255,255,255,0.2); }
+  .mine-content { flex: 1; overflow-y: auto; padding: 1rem 1.25rem; }
+  .mine-group { margin-bottom: 1.75rem; }
+  .mine-group-hdr { display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--gold); padding-bottom: 0.4rem; margin-bottom: 0.6rem; }
+  .mine-group-tittel { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--gold); flex: 1; }
+  .mine-apne-btn { background: none; border: 1.5px solid var(--gold); color: var(--gold); border-radius: 5px; padding: 0.18rem 0.55rem; font-size: 0.75rem; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .mine-apne-btn:hover { background: var(--gold); color: #fff; }
+  .mine-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid #f0eee8; font-size: 0.88rem; flex-wrap: wrap; }
+  .mine-row:last-child { border-bottom: none; }
+  .mine-row-navn { font-weight: 600; min-width: 170px; }
+  .mine-row-stykke { flex: 1; color: #555; min-width: 120px; }
+  .mine-row-var { color: #999; font-size: 0.82rem; white-space: nowrap; }
+  .mine-spilt { background: #d4edda; color: var(--played); border: 1px solid #a8d5b5; border-radius: 20px; padding: 1px 8px; font-size: 0.72rem; }
+  .mine-empty { text-align: center; padding: 2.5rem; color: #bbb; font-size: 0.9rem; }
+  .mine-stats-bar { background: var(--ink); color: var(--cream); border-radius: 10px; padding: 0.75rem 1.25rem; margin-bottom: 1rem; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.82rem; }
+  .mine-stats-bar span strong { color: var(--gold-light); }
+
+  /* ─ GRUPPE CHECKBOX ─ */
+  .gruppe-toggle { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: #666; cursor: pointer; user-select: none; }
+  .gruppe-toggle input { accent-color: var(--gold); width: 15px; height: 15px; cursor: pointer; }
+
+  /* ─ HAR SPILT COL (skjul på utskrift) ─ */
+  .har-spilt-col { }
+
+  .btn-tool-elev { border-color: var(--gold) !important; color: var(--gold) !important; font-weight: 600; }
+  .elev-modal { display:none; position:fixed; inset:0; z-index:600; background:rgba(0,0,0,0.55); align-items:flex-start; justify-content:center; padding:1.5rem 1rem; overflow-y:auto; }
+  .elev-modal.vis { display:flex; }
+  .elev-box { background:var(--cream); border-radius:16px; width:min(700px,96vw); box-shadow:0 16px 60px rgba(0,0,0,0.4); display:flex; flex-direction:column; max-height:88vh; }
+  .elev-header { background:var(--ink); color:var(--cream); border-radius:16px 16px 0 0; padding:1rem 1.25rem; display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
+  .elev-header h3 { font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--gold-light); flex:1; margin:0; }
+  .elev-hbtn { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.25); color:#fff; border-radius:7px; padding:0.38rem 0.75rem; font-family:'DM Sans',sans-serif; font-size:0.8rem; cursor:pointer; white-space:nowrap; }
+  .elev-hbtn:hover { background:rgba(255,255,255,0.2); }
+  .elev-dropzone { margin:1rem 1.25rem 0; border:2.5px dashed var(--line); border-radius:12px; padding:1.5rem; text-align:center; cursor:pointer; transition:border-color 0.2s,background 0.2s; background:#fff; }
+  .elev-dropzone.over { border-color:var(--gold); background:#fffdf5; }
+  .elev-dropzone .dz-icon { font-size:1.8rem; display:block; margin-bottom:0.3rem; }
+  .elev-dropzone strong { font-size:0.95rem; }
+  .elev-dropzone p { color:#aaa; font-size:0.82rem; margin-top:0.3rem; }
+  .elev-search-row { display:flex; gap:0.5rem; padding:0.85rem 1.25rem 0.4rem; align-items:center; }
+  .elev-search { flex:1; border:1.5px solid var(--line); border-radius:8px; padding:0.5rem 0.85rem; font-family:'DM Sans',sans-serif; font-size:0.95rem; outline:none; background:var(--cream); }
+  .elev-search:focus { border-color:var(--gold); }
+  .elev-count { font-size:0.78rem; color:#aaa; white-space:nowrap; }
+  .elev-list { flex:1; overflow-y:auto; padding:0 1.25rem 0.75rem; display:flex; flex-direction:column; gap:0.3rem; min-height:100px; }
+  .elev-item { display:flex; align-items:center; gap:0.75rem; background:#fff; border:1.5px solid var(--line); border-radius:9px; padding:0.55rem 0.85rem; cursor:pointer; transition:border-color 0.15s,background 0.15s; }
+  .elev-item:hover,.elev-item.selected { border-color:var(--gold); background:#fffdf5; }
+  .elev-check { width:18px; height:18px; accent-color:var(--gold); cursor:pointer; flex-shrink:0; }
+  .elev-navn { flex:1; font-weight:500; font-size:0.92rem; }
+  .elev-slett { background:none; border:none; color:#ddd; cursor:pointer; font-size:0.85rem; padding:0 2px; }
+  .elev-slett:hover { color:var(--rust); }
+  .elev-empty { text-align:center; padding:2rem; color:#bbb; font-size:0.88rem; line-height:1.6; }
+  .elev-footer { padding:0.85rem 1.25rem; border-top:1px solid var(--line); display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
+  .elev-sel-count { font-size:0.83rem; color:#888; flex:1; }
+  .elev-insert-btn { background:var(--gold); color:#fff; border:none; border-radius:8px; padding:0.6rem 1.25rem; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; cursor:pointer; }
+  .elev-insert-btn:disabled { background:#ccc; cursor:default; }
+  .elev-close-btn { background:none; border:1.5px solid var(--line); border-radius:8px; padding:0.6rem 1rem; font-family:'DM Sans',sans-serif; font-size:0.9rem; cursor:pointer; color:#888; }
+
+</style>
+
+  <!-- PWA -->
+  <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Konsertliste%22%2C%22short_name%22%3A%22Konsertliste%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%231e6e6e%22%2C%22theme_color%22%3A%22%231e6e6e%22%7D">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Konsertliste">
+  <meta name="theme-color" content="#1e6e6e">
+  <link rel="apple-touch-icon" href="data:image/png;base64,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">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBqgP2YDnhAoMbnRELfAE-TqoCz46rj8KU",
+      authDomain: "larvik-kulturskole.firebaseapp.com",
+      databaseURL: "https://larvik-kulturskole-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "larvik-kulturskole",
+      storageBucket: "larvik-kulturskole.firebasestorage.app",
+      messagingSenderId: "286532494707",
+      appId: "1:286532494707:web:b8bfc7b6047c8a392b9106"
+    };
+    firebase.initializeApp(firebaseConfig);
+    window._db = firebase.database();
+    window._firebaseReady = true;
+  </script>
+</head>
+<body>
+
+<!-- ── LOGIN PAGE ── -->
+<div id="loginPage">
+  <div class="login-box">
+    <h2>Konsert<span>liste</span></h2>
+    <p>Velg ditt navn for å logge inn</p>
+    <div class="login-names" id="loginNames"></div>
+  </div>
+</div>
+
+<!-- ── APP PAGE ── -->
+<div id="appPage">
+
+  <header>
+    <h1>Konsert<span>liste</span></h1>
+  </header>
+
+  <div class="user-bar">
+    <span>Innlogget som</span>
+    <span class="user-name" id="userBarName"></span>
+    <button class="logout-btn" onclick="visLeggTilApp()" style="border-color:#4caf50;color:#4caf50;">📱 Legg til app</button>
+    <button class="logout-btn logout-btn-hjelp" onclick="visTutorial()">❓ Hjelp</button>
+  </div>
+
+  <!-- Admin tools -->
+  <div class="admin-tools" id="adminTools">
+    <button class="btn-tool" onclick="document.getElementById('importFil').click()">📂 Last inn JSON</button>
+    <input type="file" id="importFil" accept=".json" style="display:none" onchange="importerJSON(event)">
+    <button class="btn-tool" onclick="eksporterJSON()">💾 Lagre JSON</button>
+    <button class="btn-tool" style="border-color:#5b9bd5;color:#5b9bd5;" onclick="genererKonsertansvarlig()">⚡ Generer konsertansvarlig</button>
+    <button class="btn-tool btn-tool-elev" onclick="visElevregister()">🎓 Elevregister</button>
+    <button class="btn-tool" style="border-color:var(--rust);color:var(--rust);" onclick="slettAlleKonserter()">🗑 Slett alle konserter</button>
+  </div>
+
+  <!-- Concert grid -->
+  <!-- Mine elever bar -->
+  <div class="mine-elever-bar" id="mineEleverBar">
+    <button class="btn-mine-elever" onclick="visMineElever()">&#128203; Mine elever</button>
+    <button class="btn-mine-elever" style="background:var(--gold);margin-left:0.5rem;" onclick="visAdminRegister()">&#127891; Administrer register</button>
+    <div class="mine-elever-sok-wrap">
+      <input class="mine-elever-sok-input" type="text" id="mineElevSokInput" placeholder="&#128269; Søk blant mine elever..." oninput="søkElevKonsert()" autocomplete="off">
+      <div class="mine-elever-sok-res" id="mineElevSokRes"></div>
+    </div>
+  </div>
+
+  <div class="concerts-section">
+    <div class="concerts-label" id="faneTittel">Konserter</div>
+    <div class="lokasjon-grid" id="lokasjonGrid"></div>
+  </div>
+
+  <!-- New concert form (admin only) -->
+  <div class="new-concert-form" id="newConcertForm">
+    <div class="ncf-grid">
+      <div>
+        <label class="ncf-label">Lokasjon</label>
+        <select id="ncLokasjon" class="ncf-input" onchange="autoFyllTid()">
+          <option value="">— Velg —</option>
+          <option>Orkestersalen</option><option>Pressverksalen</option>
+          <option>Kreativ sal</option><option>Bandrom</option><option>Cafe Sliperiet</option>
+        </select>
+      </div>
+      <div>
+        <label class="ncf-label">Dato</label>
+        <input type="date" id="ncDato" class="ncf-input" onchange="autoFyllTid()">
+      </div>
+      <div>
+        <label class="ncf-label">Klokkeslett</label>
+        <select id="ncTid" class="ncf-input">
+          <option value="">— Velg —</option>
+          <option>16:00</option><option>16:30</option><option>17:00</option>
+          <option>17:30</option><option>18:00</option><option>18:30</option>
+          <option>19:00</option><option>19:30</option><option>20:00</option>
+        </select>
+      </div>
+      <div>
+        <label class="ncf-label">Konsertansvarlig</label>
+        <select id="ncAnsvarlig" class="ncf-input">
+          <option value="">— Velg —</option>
+        </select>
+      </div>
+    </div>
+    <div class="ncf-btns">
+      <button class="btn-opprett" onclick="opprettKonsert()">+ Opprett konsert</button>
+      <span id="ncfStatusMsg" style="font-size:0.82rem;color:var(--gold);align-self:center;"></span>
+    </div>
+  </div>
+
+  <!-- Print header -->
+  <div id="printInfo">
+    <div style="display:flex;gap:2rem;align-items:baseline;border-bottom:2px solid #1a1a2e;padding-bottom:0.5rem;margin-bottom:1rem;">
+      <span id="printDato"></span>
+      <span id="printTid" style="font-size:1rem;color:#555;"></span>
+      <span id="printLokasjon" style="margin-left:auto;"></span>
+    </div>
+  </div>
+
+  <!-- Meta bar -->
+  <div class="meta-bar" id="metaBar">
+    <div><label>Dato</label><div class="meta-val" id="metaDato">—</div></div>
+    <div><label>Klokkeslett</label><div class="meta-val" id="metaTid">—</div></div>
+    <div><label>Lokasjon</label><div class="meta-val" id="metaLokasjon">—</div></div>
+    <div>
+      <label>Ansvarlig</label>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div class="meta-val" id="metaAnsvarlig">—</div>
+        <button id="btnEndreAnsvarlig" onclick="endreAnsvarlig()" style="display:none;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:5px;padding:2px 8px;font-size:0.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;">✏️ Endre</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add form -->
+  <div class="add-form" id="addForm">
+    <div class="add-form-grid">
+      <div>
+        <label class="f-label">Elev <button type="button" onclick="visElevregister()" title="Velg fra elevregister" style="background:var(--gold);color:#fff;border:none;border-radius:5px;padding:1px 7px;cursor:pointer;font-size:0.75rem;margin-left:0.4rem;vertical-align:middle;">&#127891; Register</button></label>
+        <input class="f-input" type="text" id="inpElev" placeholder="NAVN" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div>
+        <label class="f-label">Instrument</label>
+        <select class="f-input" id="inpInstrument"><option value="">— Velg —</option></select>
+      </div>
+      <div>
+        <label class="f-label">Stykkets navn</label>
+        <input class="f-input" type="text" id="inpStykke" placeholder="TITTEL" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      </div>
+    </div>
+    <div class="add-form-grid2">
+      <div>
+        <label class="f-label">Varighet (min)</label>
+        <input class="f-input" type="text" id="inpVarighet" placeholder="3,5 eller 3:30">
+      </div>
+      <div>
+        <label class="f-label">Akkompagnement</label>
+        <select class="f-input" id="inpAkkomp"><option value="">— Ingen —</option></select>
+      </div>
+      <div>
+        <label class="f-label">Merknader</label>
+        <input class="f-input" type="text" id="inpMerknader" placeholder="Valgfri...">
+      </div>
+      <div>
+        <label class="f-label">Lærer</label>
+        <select class="f-input" id="inpLærer"><option value="">— Velg instrument —</option></select>
+      </div>
+    </div>
+    <div class="add-form-btns">
+      <button class="btn-add" onclick="leggTil()">+ Legg til</button>
+      <button class="btn-print" onclick="window.print()">🖨 Skriv ut</button>
+    </div>
+  </div>
+
+  <!-- Flytt-bar (vises når innslag er valgt) -->
+  <div class="flytt-bar" id="flyttBar">
+    <span id="flyttAntall">0 valgt</span>
+    <button class="flytt-knapp" onclick="visFlyttModal()">➜ Flytt til konsert</button>
+    <button class="avbryt-flytt" onclick="avbrytFlytt()">✕ Avbryt</button>
+  </div>
+
+  <!-- Flytt-modal -->
+  <div class="modal-overlay" id="flyttModal">
+    <div class="modal-box">
+      <h3>Flytt til konsert</h3>
+      <p id="flyttModalTekst"></p>
+      <div class="modal-konsert-list" id="flyttModalListe"></div>
+      <button class="modal-avbryt" onclick="skjulFlyttModal()">Avbryt</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap" id="tableWrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="sel-col"><input type="checkbox" id="velgAlleChk" title="Velg alle" onchange="toggleVelgAlle(this.checked)" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;"></th>
+          <th class="num-col">#</th>
+          <th>Elev</th>
+          <th>Instrument</th>
+          <th>Stykke</th>
+          <th>Varighet</th>
+          <th>Akkomp.</th>
+          <th>Merknader</th>
+          <th class="th-lærer-pos" id="thLærer"><div class="th-lærer-wrap">LÆRER<button class="lærer-filter-btn" id="lærerFilterBtn" onclick="toggleLærerFilterPopup(event)" title="Filtrer på lærer">▼</button><button class="lærer-filter-btn" id="lærerFilterReset" onclick="nullstillLærerFilter()" title="Vis alle" style="display:none">✕ Alle</button></div><div class="lærer-filter-popup" id="lærerFilterPopup" style="display:none"></div></th>
+          <th class="har-spilt-col">Har spilt</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="listeBody">
+        <tr><td colspan="11"><div class="empty-state">🎵<p>Ingen innslag lagt til ennå</p></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="stats" id="statsBar">
+    <span>Innslag: <strong id="statTotal">0</strong></span>
+    <span class="no-print">Har spilt: <strong id="statPlayed">0</strong></span>
+    <span class="no-print">Gjenstår: <strong id="statLeft">0</strong></span>
+    <span>Est. varighet: <strong id="statVarighet">—</strong></span>
+  </div>
+
+
+  <!-- ── ELEVREGISTER MODAL ── -->
+  <div class="elev-modal" id="elevModal">
+    <div class="elev-box">
+      <div class="elev-header">
+        <h3>&#127891; Elevregister</h3>
+        <button class="elev-hbtn" onclick="document.getElementById('elevCsvFil').click()">&#128229; Importer CSV</button>
+        <input type="file" id="elevCsvFil" accept=".csv,.html,.htm" style="display:none" onchange="importerElevCSV(event)">
+        <button class="elev-hbtn" onclick="eksporterElevJSON()">&#128190; Lagre JSON</button>
+        <button class="elev-hbtn" onclick="document.getElementById('elevJsonFil').click()">&#128194; Last JSON</button>
+        <input type="file" id="elevJsonFil" accept=".json" style="display:none" onchange="importerElevJSON(event)">
+        <button class="elev-hbtn" onclick="skjulElevregister()">&#10005; Lukk</button>
+      </div>
+
+      <div class="elev-search-row">
+        <input class="elev-search" type="text" id="elevSok" placeholder="Søk etter navn..." oninput="filterElever()">
+        <span class="elev-count" id="elevCount">0 elever</span>
+      </div>
+      <div class="elev-list" id="elevListe">
+        <div class="elev-empty">Ingen elever lastet inn ennå.<br>Importer en CSV-fil fra Speedadmin.</div>
+      </div>
+      <div class="elev-footer">
+        <span class="elev-sel-count" id="elevValgtTekst">Ingen valgt</span>
+        <label class="gruppe-toggle" title="Slå sammen valgte elever til én gruppe">
+          <input type="checkbox" id="elevGruppeCheck"> Gruppe
+        </label>
+        <button class="elev-close-btn" onclick="skjulElevregister()">Avbryt</button>
+        <button class="elev-insert-btn" id="elevInsertBtn" onclick="settInnValgte()" disabled>Sett inn i skjema</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Administrer register modal (redigering, sletting, ingen innsetting) -->
+  <div class="elev-modal" id="adminRegisterModal">
+    <div class="elev-box">
+      <div class="elev-header">
+        <h3>&#127891; Administrer elevregister</h3>
+        <button class="elev-hbtn" onclick="document.getElementById('adminCsvFil').click()">&#128229; Importer CSV</button>
+        <input type="file" id="adminCsvFil" accept=".csv,.html,.htm" style="display:none" onchange="importerAdminCSV(event)">
+        <button class="elev-hbtn" onclick="eksporterElevJSON()">&#128190; Lagre JSON</button>
+        <button class="elev-hbtn" onclick="document.getElementById('adminJsonFil').click()">&#128194; Last JSON</button>
+        <input type="file" id="adminJsonFil" accept=".json" style="display:none" onchange="importerAdminJSON(event)">
+        <button class="elev-hbtn" onclick="skjulAdminRegister()">&#10005; Lukk</button>
+      </div>
+      <div class="elev-dropzone" id="adminDropzone" onclick="document.getElementById('adminCsvFil').click()">
+        <span class="dz-icon">&#128196;</span>
+        <strong>Dra og slipp CSV-filen hit</strong>
+        <p>eller klikk for å velge fil &mdash; eksporter fra Speedadmin</p>
+      </div>
+      <div class="elev-search-row">
+        <input class="elev-search" type="text" id="adminSok" placeholder="Søk etter navn..." oninput="filterAdminRegister()">
+        <span class="elev-count" id="adminCount">0 elever</span>
+      </div>
+      <div class="elev-list" id="adminElevListe">
+        <div class="elev-empty">Ingen elever lastet inn ennå.<br>Importer en CSV-fil fra Speedadmin.</div>
+      </div>
+      <div class="elev-footer">
+        <button class="elev-close-btn" onclick="skjulAdminRegister()">Lukk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Endre ansvarlig modal (admin) -->
+  <div class="modal-overlay" id="ansvarligModal">
+    <div class="modal-box">
+      <h3>Endre konsertansvarlig</h3>
+      <p>Velg ny ansvarlig lærer for denne konserten</p>
+      <select id="ansvarligSel" class="ncf-input" style="width:100%;margin-bottom:1rem;"></select>
+      <div style="display:flex;gap:0.5rem;">
+        <button class="btn-opprett" onclick="lagreAnsvarlig()">✓ Lagre</button>
+        <button class="modal-avbryt" onclick="document.getElementById('ansvarligModal').classList.remove('vis')">Avbryt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mine Elever visningsmodus modal -->
+  <div class="mine-modal" id="mineElevModal">
+    <div class="mine-box">
+      <div class="mine-hdr">
+        <h3 id="mineModalTittel">Mine elever i konserter</h3>
+        <button class="mine-hbtn" onclick="document.getElementById('mineElevModal').classList.remove('vis')">&#10005; Lukk</button>
+      </div>
+      <div class="mine-content" id="mineElevContent">
+        <div class="mine-empty">Ingen innslag funnet.</div>
+      </div>
+    </div>
+  </div>
+    </div>
+  </div>
+
+<!-- Bekreftelsesdialog -->
+  <div class="bekreft-overlay" id="bekreftOverlay">
+    <div class="bekreft-box">
+      <div class="bekreft-tekst" id="bekreftTekst"></div>
+      <div class="bekreft-btns">
+        <button class="bekreft-avbryt" onclick="lukkBekreft()">Avbryt</button>
+        <button class="bekreft-ok" id="bekreftOkBtn">Slett</button>
+      </div>
+    </div>
+  </div>
+
+<!-- Tutorial modal -->
+  <div class="tut-overlay" id="tutOverlay">
+    <div class="tut-box">
+      <div class="tut-header">
+        <h2 id="tutTittel">🎵 Velkommen til Konsertlisten</h2>
+        <button class="tut-close" onclick="skjulTutorial()">✕ Lukk</button>
+      </div>
+      <div class="tut-tabs" id="tutTabs"></div>
+      <div class="tut-body" id="tutBody"></div>
+      <div class="tut-footer">
+        <button class="tut-ok-btn" onclick="skjulTutorial()">Forstått, takk! 👍</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end appPage -->
+
+<script>
+  // ── DATA ─────────────────────────────────────────────────
+  const instrumentListe = ['Sang','Piano','Gitar','Fiolin','Fiolingruppe','Cello','Fløyte','Klarinett','Saxofon','Trompet','Horn','Trombone','Tuba','Fagott','Trekkspill','Skarptromme','Trommesett','Marimba','Klokkespill','Orkester','Band'];
+
+  const lærere = {
+    'Sang':['Eva Therese'],'Piano':['Edin','Jacob','Kalina'],'Trekkspill':['Agnes'],
+    'Gitar':['Bjørnar'],'Band':['Bjørnar'],'Trompet':['Håkan','Tom'],
+    'Fløyte':['Øystein'],'Saxofon':['Barbara'],'Klarinett':['Fredrik'],
+    'Fagott':['Fredrik'],'Horn':['Cecilie'],'Fiolin':['Tone'],
+    'Fiolingruppe':['Tone'],'Orkester':['Tone'],'Trombone':['Magne'],
+    'Tuba':['Magne','Gustav'],'Skarptromme':['Roger'],'Trommesett':['Roger'],
+    'Marimba':['Roger'],'Klokkespill':['Roger'],'Cello':['Nadezhda'],
+  };
+
+  const lærerInstrumenter = {
+    'Eva Therese':['Sang'],'Edin':['Piano'],'Jacob':['Piano'],'Kalina':['Piano'],
+    'Agnes':['Trekkspill'],'Bjørnar':['Gitar','Band'],'Håkan':['Trompet'],
+    'Tom':['Trompet'],'Øystein':['Fløyte'],'Barbara':['Saxofon'],
+    'Fredrik':['Klarinett','Fagott'],'Cecilie':['Horn'],
+    'Tone':['Fiolin','Fiolingruppe','Orkester'],'Magne':['Trombone','Tuba'],
+    'Gustav':['Tuba'],'Roger':['Skarptromme','Trommesett','Marimba','Klokkespill'],
+    'Nadezhda':['Cello'],
+  };
+
+  const dager = ['SØNDAG','MANDAG','TIRSDAG','ONSDAG','TORSDAG','FREDAG','LØRDAG'];
+
+  // ── STATE ────────────────────────────────────────────────
+  let påloggetBruker = null;
+  let konserter = [];
+  let aktivKonsertId = null;
+  let editIdx = -1;
+  let valgte = new Set(); // indices of selected rows
+  let lærerFilter = null;   // null = vis alle, string = vis kun denne læreren
+
+  // ── STORAGE ──────────────────────────────────────────────
+
+  function visSyncIndikator() {
+    const el = document.getElementById('fbStatus');
+    if (!el) return;
+    el.classList.add('syncing');
+    el.innerHTML = '<span class="fb-dot"></span> Synkroniserer...';
+    el.style.opacity = '1';
+    setTimeout(() => {
+      el.classList.remove('syncing');
+      el.innerHTML = '<span class="fb-dot"></span> Tilkoblet';
+      setTimeout(() => { el.style.opacity = '0'; }, 2000);
+      setTimeout(() => { el.style.opacity = '1'; el.style.display = 'flex'; }, 100);
+    }, 800);
+  }
+
+  let _fbLytter = null;
+
+  function lagreLokal() {
+    try { localStorage.setItem('konsertliste_v2', JSON.stringify(konserter)); } catch(e) {}
+    if (!window._firebaseReady) return;
+    // Alltid skriv til Firebase — bruk tom array-markør hvis ingen konserter
+    const data = konserter.length === 0 ? { _tom: true } : JSON.parse(JSON.stringify(konserter));
+    try { window._db.ref('konserter').set(data); } catch(e) {}
+  }
+
+  function lastLokal() {
+    try { const d = localStorage.getItem('konsertliste_v2'); if (d) konserter = JSON.parse(d); } catch(e) {}
+  }
+
+  function startFirebaseSync() {
+    if (!window._firebaseReady) return;
+    if (_fbLytter) { try { _fbLytter.off(); } catch(e) {} }
+    const ref = window._db.ref('konserter');
+    _fbLytter = ref;
+    ref.on('value', snapshot => {
+      const data = snapshot.val();
+      if (data && !data._tom) {
+        // Firebase har ekte data — bruk det, aldri overskriv
+        konserter = Array.isArray(data) ? data : Object.values(data);
+        konserter.forEach(k => { if (!k.innslag) k.innslag = []; });
+        if (aktivKonsertId && !konserter.find(k => k.id === aktivKonsertId)) {
+          aktivKonsertId = null; skjulKonsertvisning();
+        }
+        try { localStorage.setItem('konsertliste_v2', JSON.stringify(konserter)); } catch(e) {}
+      } else {
+        // Firebase er tom eller markert som tom — alltid respekter dette
+        konserter = [];
+        try { localStorage.setItem('konsertliste_v2', JSON.stringify([])); } catch(e) {}
+      }
+      renderTabs();
+      if (aktivKonsertId) render();
+    });
+  }
+  function eksporterJSON() {
+    const blob = new Blob([JSON.stringify(konserter, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `konsertliste_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+  }
+  function importerJSON(event) {
+    const fil = event.target.files[0]; if (!fil) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        konserter = JSON.parse(e.target.result);
+        lagreLokal(); aktivKonsertId = null;
+        renderTabs(); skjulKonsertvisning();
+        alert('Data lastet inn!');
+      } catch { alert('Ugyldig JSON-fil.'); }
+    };
+    reader.readAsText(fil);
+    event.target.value = '';
+  }
+
+  // ── LOGIN ────────────────────────────────────────────────
+
+
+  function byggLoginListe() {
+    document.getElementById('loginNames').innerHTML =
+      Object.keys(lærerInstrumenter).map(navn =>
+        `<button class="login-name-btn" onclick="loggInn('${navn}')">
+          ${navn}<span class="inst-badge">${lærerInstrumenter[navn].join(', ')}</span>
+        </button>`
+      ).join('');
+  }
+
+  function loggInn(navn) {
+    påloggetBruker = navn;
+    aktivKonsertId = null;
+    document.getElementById('loginPage').classList.add('skjult');
+    document.getElementById('appPage').classList.add('vis');
+    document.getElementById('userBarName').textContent = navn === '__admin__' ? 'Admin' : navn;
+    if (navn === '__admin__') {
+      document.getElementById('adminTools').classList.add('vis');
+      document.getElementById('mineEleverBar').classList.remove('vis');
+      document.getElementById('faneTittel').textContent = 'Konserter — Admin';
+      visNyKonsertForm();
+    } else {
+      document.getElementById('mineEleverBar').classList.add('vis');
+      document.getElementById('faneTittel').textContent = 'Velg konsert';
+    }
+    lastElevLokal();
+    renderTabs();
+    skjulKonsertvisning();
+    oppdaterInstrumentDropdown();
+  }
+
+  function loggUt() {
+    påloggetBruker = null; aktivKonsertId = null; editIdx = -1;
+    document.getElementById('loginPage').classList.remove('skjult');
+    document.getElementById('appPage').classList.remove('vis');
+    document.getElementById('adminTools').classList.remove('vis');
+    document.getElementById('mineEleverBar').classList.remove('vis');
+    document.getElementById('mineElevSokRes').classList.remove('vis');
+    document.getElementById('mineElevModal').classList.remove('vis');
+    skjulNyKonsertForm();
+  }
+
+  // ── CONCERTS ─────────────────────────────────────────────
+  function formatTab(k) {
+    const d = new Date(k.dato + 'T00:00:00');
+    return `${k.lokasjon}  ${dager[d.getDay()]} ${d.getDate()}/${d.getMonth()+1} ${d.getFullYear()}  kl. ${k.tid}`;
+  }
+
+  function formatDato(k) {
+    const d = new Date(k.dato + 'T00:00:00');
+    return `${dager[d.getDay()]} ${d.getDate()}/${d.getMonth()+1} ${d.getFullYear()}`;
+  }
+
+  const lokasjonRekkefølge = ['Orkestersalen','Pressverksalen','Kreativ sal','Bandrom','Cafe Sliperiet'];
+
+
+
+  function tabVarighet(k) {
+    let sek = 0;
+    k.innslag.forEach(item => { sek += varighetTilSek(item.varighet); });
+    return sek / 60; // minutes
+  }
+
+  function tabHeatStyle(min) {
+    // 0-20 min: normal, 20-40 min: gradient normal→red, 40+ min: full red
+    if (min <= 0) return '';
+    const t = Math.min(Math.max((min - 20) / 20, 0), 1); // 0 at 20min, 1 at 40min
+    if (t <= 0) return '';
+    // Hue: 25 (warm orange) → 0 (pure red)
+    const hue = Math.round(25 * (1 - t));
+    const sat = 100;
+    const lit = Math.round(50 - 10 * t);   // 50% → 40% (bright → vivid)
+    const bgAlpha = (0.06 + t * 0.18).toFixed(2); // subtle tint → stronger
+    const col = `hsl(${hue},${sat}%,${lit}%)`;
+    const bg  = `hsla(${hue},${sat}%,${lit}%,${bgAlpha})`;
+    return `border-color:${col};color:${col};background:${bg};`;
+  }
+
+
+  function tabProgressBar(min) {
+    // 0 min = 0%, 40 min = 100%
+    const pct = Math.min(min / 40 * 100, 100);
+    if (pct <= 0) return '';
+    // Green (hsl 120) → Yellow (60) → Red (0) over 0→40 min
+    const hue = Math.round(120 - (120 * pct / 100));
+    const col = 'hsl(' + hue + ',90%,42%)';
+    return '<span class="tab-progress" style="width:' + pct.toFixed(1) + '%;background:' + col + ';"></span>';
+  }
+
+  function lagTabTooltip(k) {
+    if (!k || !k.innslag) return 'Konserten har ingen innslag';
+    const ant = k.innslag.length;
+    if (ant === 0) return 'Konserten har ingen innslag';
+    let totalSek = 0;
+    k.innslag.forEach(item => { totalSek += varighetTilSek(item.varighet); });
+    const totMin = Math.round(totalSek / 60 * 2) / 2;
+    const varTekst = totalSek > 0 ? totMin + ' min' : 'ukjent varighet';
+    const linje1 = ant + ' innslag  ·  Est. ' + varTekst;
+    if (totalSek > 0 && totMin >= 30) {
+      return linje1 + '<br><span style="color:#f97070;font-weight:600;">⚠️ Konsert full...<br>Vurder å flytte elever til annen konsert om mulig</span>';
+    }
+    return linje1;
+  }
+
+  function renderTabs() {
+    const isAdmin = påloggetBruker === '__admin__';
+    const grid = document.getElementById('lokasjonGrid');
+
+    let html = lokasjonRekkefølge.map(lok => {
+      const konsertHer = konserter
+        .filter(k => k.lokasjon === lok)
+        .sort((a,b) => a.dato.localeCompare(b.dato) || a.tid.localeCompare(b.tid));
+
+      const tabs = konsertHer.map(k => {
+        const aktiv = k.id === aktivKonsertId ? ' active' : '';
+        const erAnsvarlig = (!isAdmin && påloggetBruker && k.ansvarlig === påloggetBruker) ? ' ansvarlig-tab' : '';
+        const d = new Date(k.dato + 'T00:00:00');
+        const label = `${dager[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}  kl. ${k.tid}`;
+        const tooltip = `<span class="tab-tooltip">${lagTabTooltip(k)}</span>`;
+        const heatMin = tabVarighet(k);
+        const heatStyle = (!aktiv && !erAnsvarlig) ? tabHeatStyle(heatMin) : '';
+        const styleAttr = heatStyle ? ` style="${heatStyle}"` : '';
+        if (isAdmin) {
+          return `<span class="tab-wrap"><span class="tab-group">` +
+            `<button class="concert-tab${aktiv}${erAnsvarlig}"${styleAttr} onclick="velgKonsert('${k.id}')">${label}${tabProgressBar(heatMin)}</button>` +
+            `<button class="tab-slett-btn" onclick="slettKonsert('${k.id}')" title="Slett">✕</button>` +
+            `</span>${tooltip}</span>`;
+        }
+        return `<span class="tab-wrap"><button class="concert-tab${aktiv}${erAnsvarlig}"${styleAttr} onclick="velgKonsert('${k.id}')">${label}${tabProgressBar(heatMin)}</button>${tooltip}</span>`;
+      }).join('');
+
+      if (!isAdmin && konsertHer.length === 0) return '';
+
+      const ingenTekst = konsertHer.length === 0
+        ? `<span class="ingen-tabs">Ingen konserter</span>` : '';
+
+      return `<div class="lokasjon-rad">
+        <div class="lokasjon-label">${lok}</div>
+        <div class="lokasjon-tabs">${tabs}${ingenTekst}</div>
+      </div>`;
+    }).join('');
+
+    grid.innerHTML = html;
+  }
+
+  function visNyKonsertForm() {
+    const sel = document.getElementById('ncAnsvarlig');
+    sel.innerHTML = `<option value="">— Velg —</option>` +
+      Object.keys(lærerInstrumenter).map(n => `<option>${n}</option>`).join('');
+    document.getElementById('newConcertForm').classList.add('vis');
+  }
+  function skjulNyKonsertForm() {
+    document.getElementById('newConcertForm').classList.remove('vis');
+  }
+
+  function autoFyllTid() {
+    const lok = document.getElementById('ncLokasjon').value;
+    const dato = document.getElementById('ncDato').value;
+    if (!lok || !dato) return;
+    // Find latest concert at this location on this date
+    const samsted = konserter.filter(k => k.lokasjon === lok && k.dato === dato);
+    if (samsted.length === 0) return;
+    samsted.sort((a,b) => b.tid.localeCompare(a.tid));
+    const sisteTid = samsted[0].tid; // e.g. "16:00"
+    const [h, m] = sisteTid.split(':').map(Number);
+    const nesteTid = String(h + 1).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+    const tidSel = document.getElementById('ncTid');
+    for (let i = 0; i < tidSel.options.length; i++) {
+      if (tidSel.options[i].value === nesteTid || tidSel.options[i].text === nesteTid) {
+        tidSel.selectedIndex = i; break;
+      }
+    }
+  }
+
+  function opprettKonsert() {
+    const dato      = document.getElementById('ncDato').value;
+    const tid       = document.getElementById('ncTid').value;
+    const lokasjon  = document.getElementById('ncLokasjon').value;
+    const ansvarlig = document.getElementById('ncAnsvarlig').value;
+    const msg       = document.getElementById('ncfStatusMsg');
+    if (!dato || !tid || !lokasjon) { alert('Fyll ut lokasjon, dato og tid.'); return; }
+    // Duplikat-sjekk
+    const duplikat = konserter.find(k => k.lokasjon === lokasjon && k.dato === dato && k.tid === tid);
+    if (duplikat) {
+      msg.textContent = '⚠️ Denne kombinasjonen finnes allerede!';
+      msg.style.color = 'var(--rust)';
+      setTimeout(() => { msg.textContent = ''; }, 3000);
+      return;
+    }
+    const id = 'k_' + Date.now();
+    konserter.push({ id, dato, tid, lokasjon, ansvarlig, innslag: [] });
+    lagreLokal();
+    msg.textContent = '✓ Konsert opprettet!';
+    msg.style.color = 'var(--played)';
+    setTimeout(() => { msg.textContent = ''; }, 2500);
+    // Behold lokasjon - avansér dato/tid smart
+    document.getElementById('ncAnsvarlig').selectedIndex = 0;
+    const tidSel2 = document.getElementById('ncTid');
+    const datoInp = document.getElementById('ncDato');
+    const antallSamme = konserter.filter(k => k.lokasjon === lokasjon && k.dato === dato).length;
+    if (antallSamme >= 3) {
+      // Gå til neste hverdag (man-tor)
+      const d = new Date(dato + 'T00:00:00');
+      do { d.setDate(d.getDate() + 1); } while (d.getDay() === 0 || d.getDay() === 5 || d.getDay() === 6);
+      // Bruk lokal dato (unngå UTC-forskyvning)
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      datoInp.value = `${yyyy}-${mm}-${dd}`;
+      for (let i = 0; i < tidSel2.options.length; i++) {
+        if (tidSel2.options[i].text === '16:00') { tidSel2.selectedIndex = i; break; }
+      }
+    } else {
+      // Avansér én time
+      const [h2, m2] = tid.split(':').map(Number);
+      const nesteTid2 = String(h2 + 1).padStart(2,'0') + ':' + String(m2).padStart(2,'0');
+      let funnet = false;
+      for (let i = 0; i < tidSel2.options.length; i++) {
+        if (tidSel2.options[i].text === nesteTid2) { tidSel2.selectedIndex = i; funnet = true; break; }
+      }
+      if (!funnet) tidSel2.selectedIndex = 0;
+    }
+    renderTabs();
+    velgKonsert(id);
+  }
+
+  function slettKonsert(id) {
+    const k = konserter.find(k => k.id === id);
+    if (!k) return;
+    visBekreft('Slette "' + formatTab(k) + '"?', () => {
+      konserter = konserter.filter(k => k.id !== id);
+      if (aktivKonsertId === id) { aktivKonsertId = null; skjulKonsertvisning(); }
+      lagreLokal();
+      renderTabs();
+    });
+  }
+
+  function slettAlleKonserter() {
+    visBekreft('Slette ALLE konserter? Dette kan ikke angres.', () => {
+      konserter = [];
+      aktivKonsertId = null;
+      skjulKonsertvisning();
+      lagreLokal();
+      renderTabs();
+    });
+  }
+
+
+
+  function velgKonsert(id) {
+    aktivKonsertId = id; editIdx = -1; valgte.clear(); lærerFilter = null;
+    oppdaterFlyttBar();
+    const frBtn = document.getElementById('lærerFilterBtn');
+    const frReset = document.getElementById('lærerFilterReset');
+    if (frBtn) { frBtn.classList.remove('aktiv'); frBtn.textContent = '▼'; }
+    if (frReset) frReset.style.display = 'none';
+    renderTabs(); visKonsertvisning();
+  }
+
+  function aktivKonsert() { return konserter.find(k => k.id === aktivKonsertId) || null; }
+
+  function visKonsertvisning() {
+    const k = aktivKonsert(); if (!k) return;
+    const isAdmin = påloggetBruker === '__admin__';
+    document.getElementById('metaDato').textContent = formatDato(k);
+    document.getElementById('metaTid').textContent = `kl. ${k.tid}`;
+    document.getElementById('metaLokasjon').textContent = k.lokasjon;
+    document.getElementById('metaAnsvarlig').textContent = k.ansvarlig || '—';
+    document.getElementById('printDato').textContent = formatDato(k);
+    document.getElementById('printTid').textContent = `kl. ${k.tid}`;
+    document.getElementById('printLokasjon').textContent = k.lokasjon;
+    document.getElementById('metaBar').classList.add('vis');
+    // Admin ser ikke innleggingsskjema
+    if (isAdmin) {
+      document.getElementById('addForm').classList.remove('vis');
+    } else {
+      document.getElementById('addForm').classList.add('vis');
+    }
+    document.getElementById('tableWrap').classList.add('vis');
+    const endrBtn = document.getElementById('btnEndreAnsvarlig');
+    if (endrBtn) endrBtn.style.display = isAdmin ? 'inline-block' : 'none';
+    oppdaterInstrumentDropdown();
+    render();
+  }
+
+  function skjulKonsertvisning() {
+    document.getElementById('metaBar').classList.remove('vis');
+    document.getElementById('addForm').classList.remove('vis');
+    document.getElementById('tableWrap').classList.remove('vis');
+    document.getElementById('statsBar').classList.remove('vis');
+  }
+
+  // ── DROPDOWNS ────────────────────────────────────────────
+  function oppdaterInstrumentDropdown() {
+    const instSel = document.getElementById('inpInstrument');
+    const lærSel  = document.getElementById('inpLærer');
+    // Populate akkompagnement dropdown
+    const akkompSel = document.getElementById('inpAkkomp');
+    if (akkompSel) {
+      const akkListe = ['— Ingen —','CD/Media'].concat(Object.keys(lærerInstrumenter));
+      akkompSel.innerHTML = akkListe.map(a => '<option>' + a + '</option>').join('');
+    }
+    const liste = (påloggetBruker && påloggetBruker !== '__admin__')
+      ? (lærerInstrumenter[påloggetBruker] || instrumentListe) : instrumentListe;
+    instSel.innerHTML = `<option value="">— Velg —</option>` + liste.map(i => `<option>${i}</option>`).join('');
+    if (liste.length === 1) { instSel.value = liste[0]; oppdaterLærerDropdown(instSel, lærSel); }
+    else lærSel.innerHTML = `<option value="">— Velg instrument —</option>`;
+  }
+
+  function oppdaterLærerDropdown(instSel, lærSel) {
+    const alle = lærere[instSel.value] || [];
+    const filtrert = (påloggetBruker && påloggetBruker !== '__admin__')
+      ? alle.filter(l => l === påloggetBruker) : alle;
+    lærSel.innerHTML = filtrert.length
+      ? filtrert.map(l => `<option>${l}</option>`).join('')
+      : `<option value="">— Ingen lærer —</option>`;
+  }
+
+  document.getElementById('inpInstrument').addEventListener('change', function() {
+    oppdaterLærerDropdown(this, document.getElementById('inpLærer'));
+  });
+
+  // ── VARIGHET ─────────────────────────────────────────────
+  function normaliserVarighet(v) {
+    if (!v) return '';
+    v = v.trim().replace(',', '.');
+    if (/^\d+:\d{1,2}$/.test(v)) {
+      const [min, sek] = v.split(':').map(Number);
+      return `${Math.round((min + sek/60)*2)/2} min`;
+    }
+    const num = parseFloat(v);
+    return isNaN(num) ? v : `${Math.round(num*2)/2} min`;
+  }
+
+  function varighetTilSek(v) {
+    const m = v && v.match(/^([\d.]+)\s*min$/);
+    return m ? parseFloat(m[1])*60 : 0;
+  }
+
+  // ── CRUD ─────────────────────────────────────────────────
+  function kanRedigere(item) {
+    if (!påloggetBruker) return false;
+    if (påloggetBruker === '__admin__') return true;
+    return item.lærer === påloggetBruker;
+  }
+
+  function kanToggleSpilt() {
+    const k = aktivKonsert(); if (!k) return false;
+    if (påloggetBruker === '__admin__') return true;
+    return k.ansvarlig === påloggetBruker;
+  }
+
+  function toggleVelgAlle(checked) {
+    const k = aktivKonsert(); if (!k) return;
+    valgte.clear();
+    if (checked) {
+      k.innslag.forEach((item, idx) => {
+        // Respect lærerFilter — only select visible rows
+        if (kanRedigere(item) && (!lærerFilter || item.lærer === lærerFilter)) {
+          valgte.add(idx);
+        }
+      });
+    }
+    oppdaterFlyttBar();
+    render();
+    const chk = document.getElementById('velgAlleChk');
+    if (chk) chk.checked = checked;
+  }
+
+  function endreAnsvarlig() {
+    const k = aktivKonsert(); if (!k) return;
+    const lærerListe = Object.keys(lærerInstrumenter);
+    const valg = document.getElementById('ansvarligModal');
+    const sel = document.getElementById('ansvarligSel');
+    sel.innerHTML = '<option value="">— Ingen ansvarlig —</option>' +
+      lærerListe.map(n => '<option' + (n === k.ansvarlig ? ' selected' : '') + '>' + n + '</option>').join('');
+    valg.classList.add('vis');
+  }
+
+  function lagreAnsvarlig() {
+    const k = aktivKonsert(); if (!k) return;
+    const ny = document.getElementById('ansvarligSel').value;
+    k.ansvarlig = ny;
+    lagreLokal();
+    document.getElementById('metaAnsvarlig').textContent = ny || '—';
+    document.getElementById('ansvarligModal').classList.remove('vis');
+    renderTabs();
+  }
+
+  function leggTil() {
+    const k = aktivKonsert(); if (!k) return;
+    const elev       = document.getElementById('inpElev').value.trim();
+    const instrument = document.getElementById('inpInstrument').value;
+    const stykke     = document.getElementById('inpStykke').value.trim();
+    const varighet   = normaliserVarighet(document.getElementById('inpVarighet').value);
+    const akkomp     = document.getElementById('inpAkkomp').value.trim();
+    const merknader  = document.getElementById('inpMerknader').value.trim();
+    const lærer      = document.getElementById('inpLærer').value;
+    if (!elev || !instrument || !stykke) { alert('Fyll ut elev, instrument og stykke.'); return; }
+    k.innslag.push({ elev, instrument, stykke, varighet, akkomp, merknader, lærer, spilt: false });
+    lagreLokal();
+    ['inpElev','inpStykke','inpVarighet','inpMerknader'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('inpAkkomp').selectedIndex = 0;
+    oppdaterInstrumentDropdown();
+    document.getElementById('inpElev').focus();
+    render();
+  }
+
+  function toggleSpilt(idx) {
+    const k = aktivKonsert(); if (!k) return;
+    k.innslag[idx].spilt = !k.innslag[idx].spilt;
+    lagreLokal(); render();
+  }
+
+  function slett(idx) {
+    const k = aktivKonsert(); if (!k || !kanRedigere(k.innslag[idx])) return;
+    k.innslag.splice(idx, 1); lagreLokal(); render();
+  }
+
+  function rediger(idx) {
+    const k = aktivKonsert(); if (!k || !kanRedigere(k.innslag[idx])) return;
+    editIdx = idx; render();
+  }
+
+  function avbrytRediger() { editIdx = -1; render(); }
+
+  function oppdaterEditLærer(idx) {
+    oppdaterLærerDropdown(
+      document.getElementById(`editInstrument_${idx}`),
+      document.getElementById(`editLærer_${idx}`)
+    );
+  }
+
+  function lagreRediger(idx) {
+    const k = aktivKonsert(); if (!k) return;
+    const elev       = document.getElementById(`editElev_${idx}`).value.trim();
+    const instrument = document.getElementById(`editInstrument_${idx}`).value;
+    const stykke     = document.getElementById(`editStykke_${idx}`).value.trim();
+    const varighet   = normaliserVarighet(document.getElementById(`editVarighet_${idx}`).value);
+    const akkomp     = document.getElementById(`editAkkomp_${idx}`).value.trim();
+    const merknader  = document.getElementById(`editMerknader_${idx}`).value.trim();
+    const lærer      = document.getElementById(`editLærer_${idx}`).value;
+    if (!elev || !instrument || !stykke) { alert('Fyll ut elev, instrument og stykke.'); return; }
+    k.innslag[idx] = { ...k.innslag[idx], elev, instrument, stykke, varighet, akkomp, merknader, lærer };
+    lagreLokal(); editIdx = -1; render();
+  }
+
+  // ── FLYTT (MOVE) ─────────────────────────────────────────
+  function toggleValgt(idx) {
+    if (valgte.has(idx)) valgte.delete(idx); else valgte.add(idx);
+    oppdaterFlyttBar();
+    // Update just the checkbox visually without full re-render
+    const row = document.querySelector(`tr[data-idx="${idx}"]`);
+    if (row) row.classList.toggle('valgt', valgte.has(idx));
+  }
+
+  function oppdaterFlyttBar() {
+    const bar = document.getElementById('flyttBar');
+    if (valgte.size > 0) {
+      bar.classList.add('vis');
+      document.getElementById('flyttAntall').textContent = `${valgte.size} valgt`;
+    } else {
+      bar.classList.remove('vis');
+    }
+  }
+
+  function avbrytFlytt() {
+    valgte.clear();
+    oppdaterFlyttBar();
+    render();
+  }
+
+  function visFlyttModal() {
+    const k = aktivKonsert(); if (!k) return;
+    const andre = konserter.filter(c => c.id !== aktivKonsertId);
+    if (andre.length === 0) { alert('Ingen andre konserter å flytte til.'); return; }
+    document.getElementById('flyttModalTekst').textContent = `Flytt ${valgte.size} innslag til:`;
+    document.getElementById('flyttModalListe').innerHTML = andre.map(c =>
+      `<button class="modal-konsert-btn" onclick="utforFlytt('${c.id}')">${formatTab(c)}</button>`
+    ).join('');
+    document.getElementById('flyttModal').classList.add('vis');
+  }
+
+  function skjulFlyttModal() {
+    document.getElementById('flyttModal').classList.remove('vis');
+  }
+
+  function utforFlytt(tilId) {
+    const fra = aktivKonsert(); if (!fra) return;
+    const til = konserter.find(c => c.id === tilId); if (!til) return;
+    // Move selected items (in reverse order to keep indices correct)
+    const idxListe = Array.from(valgte).sort((a,b) => b - a);
+    idxListe.forEach(idx => {
+      til.innslag.push(fra.innslag[idx]);
+      fra.innslag.splice(idx, 1);
+    });
+    valgte.clear();
+    lagreLokal();
+    skjulFlyttModal();
+    oppdaterFlyttBar();
+    render();
+  }
+
+
+  // ── LÆRER FILTER ──────────────────────────────────────────
+  function toggleLærerFilterPopup(e) {
+    e.stopPropagation();
+    const popup = document.getElementById('lærerFilterPopup');
+    const isOpen = popup.style.display !== 'none';
+    if (isOpen) { popup.style.display = 'none'; return; }
+    // Build list of lærere present in current concert
+    const k = aktivKonsert(); if (!k) return;
+    const lærereIKonsert = [...new Set(k.innslag.map(i => i.lærer).filter(Boolean))].sort((a,b) => a.localeCompare(b,'no'));
+    popup.innerHTML = lærereIKonsert.map(l =>
+      '<button class="' + (lærerFilter === l ? 'aktiv' : '') + '" onclick="settLærerFilter(&quot;' + l + '&quot;)">' + l + '</button>'
+    ).join('');
+    popup.style.display = 'block';
+    setTimeout(() => document.addEventListener('click', lukketLærerPopup, {once:true}), 0);
+  }
+
+  function lukketLærerPopup() {
+    const popup = document.getElementById('lærerFilterPopup');
+    if (popup) popup.style.display = 'none';
+  }
+
+  function settLærerFilter(lærer) {
+    lærerFilter = lærer;
+    valgte.clear();
+    document.getElementById('lærerFilterPopup').style.display = 'none';
+    document.getElementById('lærerFilterBtn').classList.add('aktiv');
+    document.getElementById('lærerFilterBtn').textContent = lærer.split(' ')[0] + ' ▼';
+    document.getElementById('lærerFilterReset').style.display = '';
+    oppdaterFlyttBar();
+    render();
+  }
+
+  function nullstillLærerFilter() {
+    lærerFilter = null;
+    valgte.clear();
+    document.getElementById('lærerFilterBtn').classList.remove('aktiv');
+    document.getElementById('lærerFilterBtn').textContent = '▼';
+    document.getElementById('lærerFilterReset').style.display = 'none';
+    oppdaterFlyttBar();
+    render();
+  }
+
+  // ── RENDER ───────────────────────────────────────────────
+  function render() {
+    const k = aktivKonsert(); if (!k) return;
+    const alleInnslag = k.innslag;
+    // Apply lærerFilter — filter uses original indices so move still works correctly
+    const innslag = lærerFilter
+      ? alleInnslag.filter(item => item.lærer === lærerFilter)
+      : alleInnslag;
+    // Build index map: filtered index → original index
+    const idxMap = lærerFilter
+      ? alleInnslag.reduce((acc, item, i) => { if (item.lærer === lærerFilter) acc.push(i); return acc; }, [])
+      : alleInnslag.map((_, i) => i);
+
+    const tbody = document.getElementById('listeBody');
+    const statsBar = document.getElementById('statsBar');
+
+    if (alleInnslag.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state">🎵<p>Ingen innslag lagt til ennå</p></div></td></tr>`;
+      statsBar.classList.remove('vis'); return;
+    }
+
+    statsBar.classList.add('vis');
+    const spilt = alleInnslag.filter(i => i.spilt).length;
+    document.getElementById('statTotal').textContent  = alleInnslag.length + (lærerFilter ? ' (' + innslag.length + ' vist)' : '');
+    document.getElementById('statPlayed').textContent = spilt;
+    document.getElementById('statLeft').textContent   = alleInnslag.length - spilt;
+    let totalSek = 0, harVar = false;
+    innslag.forEach(item => { const s = varighetTilSek(item.varighet); if(s>0){totalSek+=s;harVar=true;} });
+    const totMin = Math.round(totalSek/60*2)/2;
+    const statEl = document.getElementById('statVarighet');
+    statEl.textContent = harVar ? totMin + ' min' : '—';
+    statEl.style.color = (harVar && totMin > 30) ? '#c0392b' : '';
+    statEl.style.fontSize = (harVar && totMin > 30) ? '1.1rem' : '';
+    statEl.style.fontWeight = (harVar && totMin > 30) ? '700' : '';
+
+    // Sync velg-alle checkbox
+    const velgAlleChk = document.getElementById('velgAlleChk');
+    if (velgAlleChk) {
+      const synligeIdx = idxMap.filter(i => kanRedigere(alleInnslag[i]));
+      const alleValgt = synligeIdx.length > 0 && synligeIdx.every(i => valgte.has(i));
+      const noenValgt = synligeIdx.some(i => valgte.has(i));
+      velgAlleChk.checked = alleValgt;
+      velgAlleChk.indeterminate = !alleValgt && noenValgt;
+    }
+
+    const editListe = (påloggetBruker && påloggetBruker !== '__admin__')
+      ? (lærerInstrumenter[påloggetBruker] || instrumentListe) : instrumentListe;
+
+    tbody.innerHTML = innslag.map((item, i) => {
+      const idx = idxMap[i]; // original index in k.innslag
+      const kanVelge = kanRedigere(item);
+      const erValgt = valgte.has(idx);
+      const spiltTilgjengelig = kanToggleSpilt();
+      if (idx === editIdx) {
+        const iOpts = editListe.map(i => `<option${i===item.instrument?' selected':''}>${i}</option>`).join('');
+        const lOpts = (lærere[item.instrument]||[]).map(l => `<option${l===item.lærer?' selected':''}>${l}</option>`).join('') || `<option>-- Ingen --</option>`;
+        const akkompListe = ['— Ingen —','CD/Media'].concat(Object.keys(lærerInstrumenter));
+        const akkompOpts = akkompListe.map(a => '<option' + (a===item.akkomp?' selected':'') + '>' + a + '</option>').join('');
+        const spiltCell = spiltTilgjengelig
+          ? `<td class="check-cell har-spilt-col"><input type="checkbox" ${item.spilt?'checked':''} onchange="toggleSpilt(${idx})"></td>`
+          : `<td class="check-cell har-spilt-col">${item.spilt ? '<span style="color:var(--played)">&#10003;</span>' : ''}</td>`;
+        return `<tr class="edit-row" data-idx="${idx}">
+          <td></td>
+          <td>${idx+1}</td>
+          <td><input id="editElev_${idx}" value="${item.elev}" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"></td>
+          <td><select id="editInstrument_${idx}" onchange="oppdaterEditLærer(${idx})">${iOpts}</select></td>
+          <td><input id="editStykke_${idx}" value="${item.stykke}" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"></td>
+          <td><input id="editVarighet_${idx}" value="${item.varighet}" style="width:70px"></td>
+          <td><select id="editAkkomp_${idx}">${akkompOpts}</select></td>
+          <td><input id="editMerknader_${idx}" value="${item.merknader||''}"></td>
+          <td><select id="editLærer_${idx}">${lOpts}</select></td>
+          ${spiltCell}
+          <td style="white-space:nowrap">
+            <button class="save-btn" onclick="lagreRediger(${idx})">&#10003;</button>
+            <button class="cancel-btn" onclick="avbrytRediger()">&#10005;</button>
+          </td>
+        </tr>`;
+      }
+      const selCel = kanVelge ? '<input type="checkbox" ' + (erValgt ? 'checked' : '') + ' onchange="toggleValgt(' + idx + ')">' : '';
+      const btnCel = kanRedigere(item) ? '<button class="del-btn" onclick="slett(' + idx + ')">&#x2715;</button><button class="edit-btn" onclick="rediger(' + idx + ')">&#x270F;&#xFE0F;</button>' : '';
+      const spiltCel = spiltTilgjengelig
+        ? '<input type="checkbox" ' + (item.spilt ? 'checked' : '') + ' onchange="toggleSpilt(' + idx + ')">'
+        : (item.spilt ? '<span style="color:var(--played);font-size:1.1rem">&#10003;</span>' : '');
+      return '<tr class="' + (item.spilt ? 'played' : '') + (erValgt ? ' valgt' : '') + '" data-idx="' + idx + '">' +
+        '<td class="sel-col">' + selCel + '</td>' +
+        '<td class="num-col">' + (idx+1) + '</td>' +
+        '<td>' + item.elev + '</td>' +
+        '<td><span class="instrument-badge' + (item.spilt ? ' played-badge' : '') + '">' + item.instrument + '</span></td>' +
+        '<td>' + item.stykke + '</td>' +
+        '<td class="duration">' + (item.varighet || '—') + '</td>' +
+        '<td style="color:#666;font-size:0.85rem">' + (item.akkomp || '') + '</td>' +
+        '<td style="color:#666;font-size:0.85rem">' + (item.merknader || '') + '</td>' +
+        '<td>' + (item.lærer || '—') + '</td>' +
+        '<td class="check-cell har-spilt-col">' + spiltCel + '</td>' +
+        '<td style="white-space:nowrap">' + btnCel + '</td>' +
+      '</tr>';
+    }).join('');
+
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.activeElement.closest('.add-form')) leggTil();
+  });
+
+
+  // ── ELEVREGISTER ─────────────────────────────────────────
+  let elevregister = [];   // [{navn: 'Ole Hansen'}]
+  let elevValgte = new Set();
+
+  function elevNøkkel() {
+    return 'elevregister_v1_' + (påloggetBruker || '__felles__');
+  }
+  function lagreElevLokal() {
+    try { localStorage.setItem(elevNøkkel(), JSON.stringify(elevregister)); } catch(e) {}
+    if (!window._firebaseReady || !påloggetBruker) return;
+    const key = påloggetBruker.replace(/[.#$\[\]]/g, '_');
+    // Wrap in object to avoid Firebase array conversion issues
+    try { window._db.ref('elevregistre/' + key).set({ elever: JSON.parse(JSON.stringify(elevregister)) }); } catch(e) {}
+  }
+  function lastElevLokal() {
+    try {
+      const d = localStorage.getItem(elevNøkkel());
+      elevregister = d ? JSON.parse(d) : [];
+    } catch(e) { elevregister = []; }
+  }
+  function lastElevFraFirebase() {
+    if (!window._firebaseReady || !påloggetBruker) return;
+    const key = påloggetBruker.replace(/[.#$\[\]]/g, '_');
+    window._db.ref('elevregistre/' + key).once('value').then(snapshot => {
+      const data = snapshot.val();
+      if (data && data.elever) {
+        elevregister = Array.isArray(data.elever) ? data.elever : Object.values(data.elever);
+        elevregister.sort((a,b) => a.navn.localeCompare(b.navn, 'no'));
+        try { localStorage.setItem(elevNøkkel(), JSON.stringify(elevregister)); } catch(e) {}
+        renderElevListe(); renderAdminRegister();
+      }
+    });
+  }
+
+  function visElevregister() {
+    elevValgte.clear();
+    document.getElementById('elevSok').value = '';
+    renderElevListe();
+    document.getElementById('elevModal').classList.add('vis');
+    document.getElementById('elevSok').focus();
+  }
+  function skjulElevregister() {
+    document.getElementById('elevModal').classList.remove('vis');
+  }
+
+  function oppsettDropzone() {
+    const dz = document.getElementById('elevDropzone');
+    if (dz._dzInit) return;
+    dz._dzInit = true;
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault(); dz.classList.remove('over');
+      const fil = e.dataTransfer.files[0];
+      if (fil) lesElevFil(fil);
+    });
+  }
+
+  function importerElevCSV(event) {
+    const fil = event.target.files[0];
+    if (fil) lesElevFil(fil);
+    event.target.value = '';
+  }
+
+  function lesElevFil(fil) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const content = e.target.result;
+      const navn = trekkUtNavn(content);
+      if (navn.length === 0) {
+        alert('Fant ingen navn i filen. Sjekk at det er riktig fil fra Speedadmin.');
+        return;
+      }
+      // Merge med eksisterende, unngå duplikater
+      const eksisterende = new Set(elevregister.map(e => e.navn));
+      let nye = 0;
+      navn.forEach(n => {
+        if (!eksisterende.has(n)) {
+          elevregister.push({navn: n});
+          nye++;
+        }
+      });
+      elevregister.sort((a,b) => a.navn.localeCompare(b.navn, 'no'));
+      lagreElevLokal();
+      renderElevListe();
+      alert('Importert ' + navn.length + ' elever (' + nye + ' nye).');
+    };
+    reader.readAsText(fil, 'utf-8');
+  }
+
+  function trekkUtNavn(content) {
+    // Decode HTML entities
+    const tmp = document.createElement('textarea');
+    tmp.innerHTML = content;
+    let text = tmp.value;
+    // Strip HTML tags
+    text = text.replace(/<[^>]+>/g, ' ');
+    text = text.replace(/\s+/g, ' ');
+
+    const adresseEndings = [
+      'veien','gata','gate','vei','bakken','toppen','haven','havna',
+      'stien','plassen','lykka','dalen','berg','torget','ravei',
+      'allee','marka','steensgate','hesselbergsvei','kaupangveien',
+      'sollikroken','ratoppen','sandveien','ornveien','borrestadveien',
+      'westleyveien','mollergaten','drengsroa','grevevei','halsegata',
+      'torpelia','hoffsgate','jernbanegata','ulaveien','agnesasen',
+      'kringsjaveien','ornveien','aasen'
+    ];
+
+    const navn = [];
+    // Pattern: Kulturskolen [elevid] [alder] [navn...] [adresse] [4-digit postnr]
+    const blocks = text.match(/Kulturskolen \d+ \d+ .+?(?= \d{4} [A-Z]{2,})/g) || [];
+    blocks.forEach(block => {
+      const parts = block.replace(/^Kulturskolen \d+ \d+ /, '').trim().split(' ');
+      const navnOrd = [];
+      for (const w of parts) {
+        if (/\d/.test(w)) break;
+        const wl = w.toLowerCase();
+        if (adresseEndings.some(s => wl.endsWith(s))) break;
+        if (/^[A-ZÆØÅÆØÅ][a-zæøåéàA-ZÆØÅæøåéà-]+$/.test(w) || /[-]/.test(w)) {
+          navnOrd.push(w);
+        } else {
+          break;
+        }
+      }
+      if (navnOrd.length >= 2) {
+        navn.push(navnOrd.join(' '));
+      }
+    });
+    return [...new Set(navn)].sort((a,b) => a.localeCompare(b,'no'));
+  }
+
+  function filterElever() {
+    renderElevListe();
+  }
+
+  function renderElevListe() {
+    const sok = (document.getElementById('elevSok').value || '').toLowerCase();
+    const liste = document.getElementById('elevListe');
+    const filtrert = elevregister.filter(e =>
+      !sok || e.navn.toLowerCase().includes(sok)
+    );
+    document.getElementById('elevCount').textContent = elevregister.length + ' elever';
+
+    if (elevregister.length === 0) {
+      liste.innerHTML = '<div class="elev-empty">Ingen elever lastet inn ennå.<br>Importer en CSV-fil fra Speedadmin.</div>';
+      oppdaterElevFooter();
+      return;
+    }
+    if (filtrert.length === 0) {
+      liste.innerHTML = '<div class="elev-empty">Ingen treff på &laquo;' + sok + '&raquo;</div>';
+      oppdaterElevFooter();
+      return;
+    }
+
+    liste.innerHTML = filtrert.map((e, i) => {
+      const idx = elevregister.indexOf(e);
+      const sel = elevValgte.has(idx) ? ' selected' : '';
+      const chk = elevValgte.has(idx) ? 'checked' : '';
+      return '<div class="elev-item' + sel + '" onclick="toggleElevValg(' + idx + ')">' +
+        '<input class="elev-check" type="checkbox" ' + chk + ' onclick="event.stopPropagation();toggleElevValg(' + idx + ')">' +
+        '<span class="elev-navn">' + e.navn + '</span>' +
+        '<button class="elev-slett" onclick="event.stopPropagation();slettElev(' + idx + ')" title="Fjern fra register">&#10005;</button>' +
+      '</div>';
+    }).join('');
+
+    oppdaterElevFooter();
+  }
+
+  function toggleElevValg(idx) {
+    if (elevValgte.has(idx)) elevValgte.delete(idx);
+    else elevValgte.add(idx);
+    renderElevListe();
+  }
+
+  function slettElev(idx) {
+    elevregister.splice(idx, 1);
+    elevValgte.clear();
+    lagreElevLokal();
+    renderElevListe();
+  }
+
+  function oppdaterElevFooter() {
+    const n = elevValgte.size;
+    const valgtTekst = document.getElementById('elevValgtTekst');
+    const insertBtn = document.getElementById('elevInsertBtn');
+    if (valgtTekst) valgtTekst.textContent = n === 0 ? 'Ingen valgt' : n + ' valgt';
+    if (insertBtn) insertBtn.disabled = n === 0;
+  }
+
+  function settInnValgte() {
+    const valgteListe = [...elevValgte].map(i => elevregister[i].navn);
+    if (valgteListe.length === 0) return;
+    const gruppeBox = document.getElementById('elevGruppeCheck');
+    const elevFelt = document.getElementById('inpElev');
+    if (elevFelt) {
+      if (gruppeBox && gruppeBox.checked && valgteListe.length > 1) {
+        elevFelt.value = valgteListe.join(' / ').toUpperCase();
+      } else {
+        elevFelt.value = valgteListe[0].toUpperCase();
+      }
+    }
+    skjulElevregister();
+    setTimeout(() => {
+      const inst = document.getElementById('inpInstrument');
+      if (inst) inst.focus();
+    }, 100);
+  }
+
+  function eksporterElevJSON() {
+    if (elevregister.length === 0) { alert('Ingen elever å eksportere.'); return; }
+    const blob = new Blob([JSON.stringify(elevregister, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'elevregister.json';
+    a.click();
+  }
+
+  function importerElevJSON(event) {
+    const fil = event.target.files[0]; if (!fil) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        elevregister = JSON.parse(e.target.result);
+        elevregister.sort((a,b) => a.navn.localeCompare(b.navn,'no'));
+        lagreElevLokal();
+        renderElevListe();
+        alert('Elevregister lastet: ' + elevregister.length + ' elever.');
+      } catch { alert('Ugyldig JSON-fil.'); }
+    };
+    reader.readAsText(fil);
+    event.target.value = '';
+  }
+
+  // ── SØKEFELT: MINE ELEVER I KONSERTER ────────────────────
+  function søkElevKonsert() {
+    const q = (document.getElementById('mineElevSokInput').value || '').toLowerCase().trim();
+    const res = document.getElementById('mineElevSokRes');
+    if (!q || !påloggetBruker || påloggetBruker === '__admin__') {
+      res.classList.remove('vis'); return;
+    }
+    const treff = [];
+    konserter.forEach(k => {
+      k.innslag.forEach(item => {
+        if (item.lærer === påloggetBruker && item.elev.toLowerCase().includes(q)) {
+          treff.push({ item, konsert: k });
+        }
+      });
+    });
+    if (treff.length === 0) {
+      res.innerHTML = '<div class="mes-tom">Ingen treff</div>';
+    } else {
+      res.innerHTML = treff.map(t => {
+        const d = new Date(t.konsert.dato + 'T00:00:00');
+        const dato = dager[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth()+1) + '  kl. ' + t.konsert.tid;
+        return '<div class="mes-item">' +
+          '<div class="mes-navn">' +
+          '<strong>' + t.item.elev + '</strong>' +
+          '<span>' + t.konsert.lokasjon + ' \u2013 ' + dato + '</span>' +
+          '</div>' +
+          '<button class="mes-btn" onclick="g\u00e5TilKonsert(\'' + t.konsert.id + '\')">&#197;pne</button>' +
+          '</div>';
+      }).join('');
+    }
+    res.classList.add('vis');
+  }
+
+  function gåTilKonsert(id) {
+    document.getElementById('mineElevSokRes').classList.remove('vis');
+    document.getElementById('mineElevSokInput').value = '';
+    velgKonsert(id);
+  }
+
+  document.addEventListener('click', function(e) {
+    const bar = document.getElementById('mineEleverBar');
+    if (bar && !bar.contains(e.target)) {
+      const res = document.getElementById('mineElevSokRes');
+      if (res) res.classList.remove('vis');
+    }
+  });
+
+  // ── VISNINGSMODUS: MINE ELEVER ────────────────────────────
+  function visMineElever() {
+    const modal = document.getElementById('mineElevModal');
+    const content = document.getElementById('mineElevContent');
+    const tittel = document.getElementById('mineModalTittel');
+    const bruker = påloggetBruker;
+    if (!bruker) return;
+
+    tittel.textContent = bruker === '__admin__' ? 'Alle elever i konserter' : 'Mine elever – ' + bruker;
+
+    const konsertData = [];
+    konserter.forEach(k => {
+      const mine = k.innslag.filter(item =>
+        bruker === '__admin__' ? true : item.lærer === bruker
+      );
+      if (mine.length > 0) konsertData.push({ k: k, mine: mine });
+    });
+    konsertData.sort(function(a,b){ return a.k.dato.localeCompare(b.k.dato) || a.k.tid.localeCompare(b.k.tid); });
+
+    let totalElever = 0, totalSpilt = 0;
+    konsertData.forEach(function(e){ totalElever += e.mine.length; totalSpilt += e.mine.filter(function(i){return i.spilt;}).length; });
+
+    if (konsertData.length === 0) {
+      content.innerHTML = '<div class="mine-empty">&#127925; Ingen innslag registrert ennå.</div>';
+    } else {
+      var statsHtml = '<div class="mine-stats-bar">' +
+        '<span>Konserter: <strong>' + konsertData.length + '</strong></span>' +
+        '<span>Innslag: <strong>' + totalElever + '</strong></span>' +
+        '<span>Har spilt: <strong>' + totalSpilt + '</strong></span>' +
+        '<span>Gjenstår: <strong>' + (totalElever - totalSpilt) + '</strong></span>' +
+        '</div>';
+
+      var groupsHtml = konsertData.map(function(entry) {
+        var k = entry.k, mine = entry.mine;
+        var d = new Date(k.dato + 'T00:00:00');
+        var dato = dager[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth()+1) + ' ' + d.getFullYear() + '  kl. ' + k.tid;
+        var rows = mine.map(function(item) {
+          var spiltBadge = item.spilt ? '<span class="mine-spilt">&#10003; Spilt</span>' : '';
+          var varBadge = item.varighet ? '<span class="mine-row-var">' + item.varighet + '</span>' : '';
+          return '<div class="mine-row">' +
+            '<div class="mine-row-navn">' + item.elev + '</div>' +
+            '<div class="mine-row-stykke">' + item.stykke + ' <span class="instrument-badge">' + item.instrument + '</span></div>' +
+            varBadge + spiltBadge +
+            '</div>';
+        }).join('');
+        return '<div class="mine-group">' +
+          '<div class="mine-group-hdr">' +
+          '<span class="mine-group-tittel">' + k.lokasjon + ' &mdash; ' + dato + '</span>' +
+          '<button class="mine-apne-btn" onclick="g\u00e5TilKonsertOgLukk(\'' + k.id + '\')">&#197;pne</button>' +
+          '</div>' + rows + '</div>';
+      }).join('');
+
+      content.innerHTML = statsHtml + groupsHtml;
+    }
+    modal.classList.add('vis');
+  }
+
+  function gåTilKonsertOgLukk(id) {
+    document.getElementById('mineElevModal').classList.remove('vis');
+    velgKonsert(id);
+  }
+
+
+  // ── ADMINISTRER REGISTER (redigering + sletting, ingen innsetting) ──────
+  let adminEditIdx = -1;
+
+  function visAdminRegister() {
+    adminEditIdx = -1;
+    document.getElementById('adminSok').value = '';
+    renderAdminRegister();
+    document.getElementById('adminRegisterModal').classList.add('vis');
+    document.getElementById('adminSok').focus();
+    oppsettAdminDropzone();
+  }
+
+  function skjulAdminRegister() {
+    adminEditIdx = -1;
+    document.getElementById('adminRegisterModal').classList.remove('vis');
+  }
+
+  function oppsettAdminDropzone() {
+    const dz = document.getElementById('adminDropzone');
+    if (dz._dzInit) return;
+    dz._dzInit = true;
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault(); dz.classList.remove('over');
+      const fil = e.dataTransfer.files[0];
+      if (fil) lesAdminFil(fil);
+    });
+  }
+
+  function importerAdminCSV(event) {
+    const fil = event.target.files[0];
+    if (fil) lesAdminFil(fil);
+    event.target.value = '';
+  }
+
+  function lesAdminFil(fil) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const navn = trekkUtNavn(e.target.result);
+      if (navn.length === 0) { alert('Fant ingen navn. Sjekk at det er riktig fil fra Speedadmin.'); return; }
+      const eksisterende = new Set(elevregister.map(e => e.navn));
+      let nye = 0;
+      navn.forEach(n => { if (!eksisterende.has(n)) { elevregister.push({navn: n}); nye++; } });
+      elevregister.sort((a,b) => a.navn.localeCompare(b.navn, 'no'));
+      lagreElevLokal();
+      renderAdminRegister();
+      alert('Importert ' + navn.length + ' elever (' + nye + ' nye).');
+    };
+    reader.readAsText(fil, 'utf-8');
+  }
+
+  function importerAdminJSON(event) {
+    const fil = event.target.files[0]; if (!fil) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        const eksisterende = new Set(elevregister.map(e => e.navn));
+        let nye = 0;
+        data.forEach(item => {
+          const n = item.navn || item;
+          if (typeof n === 'string' && !eksisterende.has(n)) { elevregister.push({navn: n}); nye++; }
+        });
+        elevregister.sort((a,b) => a.navn.localeCompare(b.navn,'no'));
+        lagreElevLokal();
+        renderAdminRegister();
+        alert('Lastet inn ' + data.length + ' elever (' + nye + ' nye).');
+      } catch { alert('Ugyldig JSON-fil.'); }
+    };
+    reader.readAsText(fil);
+    event.target.value = '';
+  }
+
+  function filterAdminRegister() { renderAdminRegister(); }
+
+  function renderAdminRegister() {
+    const sok = (document.getElementById('adminSok').value || '').toLowerCase();
+    const liste = document.getElementById('adminElevListe');
+    const filtrert = elevregister.filter(e => !sok || e.navn.toLowerCase().includes(sok));
+    document.getElementById('adminCount').textContent = elevregister.length + ' elever';
+
+    if (elevregister.length === 0) {
+      liste.innerHTML = '<div class="elev-empty">Ingen elever lastet inn ennå.<br>Importer en CSV-fil fra Speedadmin.</div>';
+      return;
+    }
+    if (filtrert.length === 0) {
+      liste.innerHTML = '<div class="elev-empty">Ingen treff</div>';
+      return;
+    }
+
+    liste.innerHTML = filtrert.map(e => {
+      const idx = elevregister.indexOf(e);
+      if (idx === adminEditIdx) {
+        // Redigeringsmodus
+        return '<div class="elev-item" style="gap:0.4rem;">' +
+          '<input type="text" id="adminEditInput" value="' + e.navn.replace(/"/g, '&quot;') + '" ' +
+          'style="flex:1;border:1.5px solid var(--gold);border-radius:5px;padding:0.3rem 0.5rem;font-size:0.9rem;" ' +
+          'onkeydown="if(event.key==\'Enter\')lagreAdminRediger(' + idx + ');if(event.key==\'Escape\')avbrytAdminRediger()">' +
+          '<button onclick="lagreAdminRediger(' + idx + ')" style="background:var(--gold);color:#fff;border:none;border-radius:5px;padding:0.28rem 0.6rem;cursor:pointer;font-size:0.82rem;">✓</button>' +
+          '<button onclick="avbrytAdminRediger()" style="background:none;border:1.5px solid #ccc;border-radius:5px;padding:0.28rem 0.5rem;cursor:pointer;font-size:0.82rem;color:#888;">✕</button>' +
+          '</div>';
+      }
+      return '<div class="elev-item">' +
+        '<span class="elev-navn">' + e.navn + '</span>' +
+        '<button class="elev-edit" onclick="startAdminRediger(' + idx + ')" title="Rediger navn">✏️</button>' +
+        '<button class="elev-slett" onclick="slettAdminElev(' + idx + ')" title="Slett">&#10005;</button>' +
+      '</div>';
+    }).join('');
+
+    // Auto-focus edit input if in edit mode
+    if (adminEditIdx >= 0) {
+      const inp = document.getElementById('adminEditInput');
+      if (inp) { inp.focus(); inp.select(); }
+    }
+  }
+
+  function startAdminRediger(idx) {
+    adminEditIdx = idx;
+    renderAdminRegister();
+  }
+
+  function avbrytAdminRediger() {
+    adminEditIdx = -1;
+    renderAdminRegister();
+  }
+
+  function lagreAdminRediger(idx) {
+    const inp = document.getElementById('adminEditInput');
+    if (!inp) return;
+    const nyttNavn = inp.value.trim();
+    if (!nyttNavn) { alert('Navn kan ikke være tomt.'); return; }
+    elevregister[idx].navn = nyttNavn;
+    elevregister.sort((a,b) => a.navn.localeCompare(b.navn,'no'));
+    lagreElevLokal();
+    adminEditIdx = -1;
+    renderAdminRegister();
+    // Also refresh the regular register list if open
+    if (!document.getElementById('elevModal').classList.contains('vis') === false) {
+      renderElevListe();
+    }
+  }
+
+  function slettAdminElev(idx) {
+    visBekreft('Slett ' + elevregister[idx].navn + ' fra registeret?', () => { _slettElevUtfor(idx); }); return;
+  }
+  function _slettElevUtfor(idx) {
+    elevregister.splice(idx, 1);
+    lagreElevLokal();
+    adminEditIdx = -1;
+    renderAdminRegister();
+    renderElevListe();
+  }
+
+
+
+  function visBekreft(tekst, onOk) {
+    document.getElementById('bekreftTekst').textContent = tekst;
+    const okBtn = document.getElementById('bekreftOkBtn');
+    // Remove old listener
+    const nyBtn = okBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(nyBtn, okBtn);
+    nyBtn.addEventListener('click', () => { lukkBekreft(); onOk(); });
+    document.getElementById('bekreftOverlay').classList.add('vis');
+  }
+  function lukkBekreft() {
+    document.getElementById('bekreftOverlay').classList.remove('vis');
+  }
+  function visLeggTilApp() {
+    const bruker = påloggetBruker === '__admin__' ? 'admin' : påloggetBruker;
+    const url = window.location.origin + window.location.pathname + '?bruker=' + encodeURIComponent(bruker);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    let steg = '';
+    if (isIOS) {
+      steg = `<b>iPhone / iPad:</b><br>
+1. Trykk på <b>Del-ikonet</b> nederst i Safari (firkant med pil opp)<br>
+2. Scroll ned og trykk <b>«Legg til på Hjem-skjerm»</b><br>
+3. Trykk <b>«Legg til»</b> øverst til høyre<br><br>
+Kopier lenken din først:`;
+    } else if (isAndroid) {
+      steg = `<b>Android:</b><br>
+1. Trykk på <b>meny-ikonet</b> (⋮) øverst til høyre i Chrome<br>
+2. Trykk <b>«Legg til på startskjermen»</b><br>
+3. Trykk <b>«Legg til»</b><br><br>
+Din personlige lenke:`;
+    } else {
+      steg = `<b>Mobil:</b> Åpne lenken i nettleseren på mobilen din og bruk «Legg til på hjemskjerm»-funksjonen.<br><br>
+Din personlige lenke (send denne til mobilen din):`;
+    }
+    
+    document.getElementById('pwaSteg').innerHTML = steg;
+    document.getElementById('pwaUrl').textContent = url;
+    document.getElementById('pwaOverlay').classList.add('vis');
+  }
+
+  // ── GENERER KONSERTANSVARLIG ─────────────────────────────
+  function genererKonsertansvarlig() {
+    const aktive = konserter.filter(k => k.innslag.length > 0);
+    if (aktive.length === 0) { alert('Ingen konserter med innslag.'); return; }
+
+    // Count innslag per lærer per konsert
+    const tellingPerKonsert = {};
+    aktive.forEach(k => {
+      tellingPerKonsert[k.id] = {};
+      k.innslag.forEach(item => {
+        if (!item.lærer) return;
+        tellingPerKonsert[k.id][item.lærer] = (tellingPerKonsert[k.id][item.lærer] || 0) + 1;
+      });
+    });
+
+    // Total innslag per lærer across ALL concerts
+    const totalPerLærer = {};
+    aktive.forEach(k => {
+      Object.entries(tellingPerKonsert[k.id]).forEach(([lærer, ant]) => {
+        totalPerLærer[lærer] = (totalPerLærer[lærer] || 0) + ant;
+      });
+    });
+
+    // Group concerts by dato+tid (same slot = same day+time)
+    const slotTildelt = {}; // "dato_tid" -> Set of already-assigned lærere in that slot
+
+    // Sort concerts: fewest unique lærere first (hardest to assign gets priority)
+    const sorterte = [...aktive].sort((a, b) => {
+      const aL = Object.keys(tellingPerKonsert[a.id]).length;
+      const bL = Object.keys(tellingPerKonsert[b.id]).length;
+      return aL - bL;
+    });
+
+    const resultat = {}; // konsertId -> lærer or null
+
+    sorterte.forEach(k => {
+      const telling = tellingPerKonsert[k.id];
+      const slot = k.dato + '_' + k.tid;
+      if (!slotTildelt[slot]) slotTildelt[slot] = new Set();
+      const bruktISlot = slotTildelt[slot];
+
+      // All lærere with innslag here, sorted by count desc
+      const alleMedInnslag = Object.entries(telling)
+        .filter(([, ant]) => ant > 0)
+        .sort((a, b) => b[1] - a[1]);
+
+      if (alleMedInnslag.length === 0) { resultat[k.id] = null; return; }
+
+      // Preference tiers:
+      // Tier 1: not used in slot, >= 3 innslag
+      // Tier 2: not used in slot, 1-2 innslag (fallback)
+      // Tier 3: already used in slot, >= 3 innslag (last resort)
+      // Tier 4: already used in slot, 1-2 innslag (absolute last resort)
+
+      // Picks best candidate from a list (sorted desc by count).
+      // Returns null only if list is empty — never on a tie.
+      function velgFraKandidater(kandidater) {
+        if (kandidater.length === 0) return null;
+        // Sort desc by innslag count on THIS concert
+        const sorted = [...kandidater].sort((a, b) => {
+          if (b[1] !== a[1]) return b[1] - a[1]; // most innslag first
+          // Tiebreak: fewest innslag on OTHER concerts
+          const aAndre = (totalPerLærer[a[0]] || 0) - telling[a[0]];
+          const bAndre = (totalPerLærer[b[0]] || 0) - telling[b[0]];
+          if (aAndre !== bAndre) return aAndre - bAndre; // fewest other first
+          return a[0].localeCompare(b[0], 'no'); // alphabetic final tiebreak
+        });
+        return sorted[0][0];
+      }
+
+      // Build tiers in priority order, each sorted desc by count
+      const tier1 = alleMedInnslag.filter(([l, ant]) => !bruktISlot.has(l) && ant >= 3);
+      const tier2 = alleMedInnslag.filter(([l, ant]) => !bruktISlot.has(l) && ant < 3);
+      const tier3 = alleMedInnslag.filter(([l, ant]) =>  bruktISlot.has(l) && ant >= 3);
+      const tier4 = alleMedInnslag.filter(([l, ant]) =>  bruktISlot.has(l) && ant < 3);
+
+      let valgt = velgFraKandidater(tier1)
+               ?? velgFraKandidater(tier2)
+               ?? velgFraKandidater(tier3)
+               ?? velgFraKandidater(tier4)
+               ?? null;
+
+      resultat[k.id] = valgt;
+      if (valgt) bruktISlot.add(valgt);
+    });
+
+    // Apply and summarise
+    let endret = 0;
+    const oppsummering = [];
+    aktive.forEach(k => {
+      const ny = resultat[k.id] || '';
+      if (k.ansvarlig !== ny) { k.ansvarlig = ny; endret++; }
+      const d = new Date(k.dato + 'T00:00:00');
+      const dagNavn = ['Søn','Man','Tir','Ons','Tor','Fre','Lør'][d.getDay()];
+      oppsummering.push(dagNavn + ' ' + d.getDate() + '/' + (d.getMonth()+1) + ' ' + k.tid + ' – ' + k.lokasjon + ': ' + (ny || '(tomt)'));
+    });
+
+    lagreLokal();
+    // Refresh meta bar if a concert is active
+    const akt = aktivKonsert();
+    if (akt) {
+      document.getElementById('metaAnsvarlig').textContent = akt.ansvarlig || '—';
+    }
+    renderTabs();
+
+    alert('Ferdig! ' + endret + ' konsert(er) oppdatert.\n\n' + oppsummering.join('\n'));
+  }
+
+  // ── TOOLTIP POSITIONING ──────────────────────────────────
+  document.addEventListener('mousemove', e => {
+    const wrap = e.target.closest('.tab-wrap');
+    if (!wrap) return;
+    const tip = wrap.querySelector('.tab-tooltip');
+    if (!tip) return;
+    const tw = tip.offsetWidth || 180;
+    const th = tip.offsetHeight || 36;
+    const margin = 12;
+    let x = e.clientX - tw / 2;
+    let y = e.clientY - th - 12;
+    // If too close to top, show below cursor instead
+    if (y < margin) y = e.clientY + 20;
+    // Keep within horizontal viewport
+    if (x < margin) x = margin;
+    if (x + tw > window.innerWidth - margin) x = window.innerWidth - tw - margin;
+    tip.style.left = x + 'px';
+    tip.style.top  = y + 'px';
+  });
+
+
+  // ── TUTORIAL ─────────────────────────────────────────────
+  const tutorialInnhold = {
+    admin: [
+      {
+        tab: '🗂 Konserter',
+        html: `
+          <div class="tut-section">
+            <h3>🗂 Opprette og administrere konserter</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge gold">+ Ny konsert</span> for å opprette en konsert. Fyll ut dato, tid, lokasjon og konsertansvarlig.</li>
+              <li>Konserter vises som knapper organisert etter lokasjon. Hold musen over en knapp for å se antall innslag og estimert varighet.</li>
+              <li>Knappens farge graderes fra normal → oransje → rød etter hvert som konserten fylles opp (20–40 min).</li>
+              <li>Trykk <span class="tut-badge">✕</span> ved siden av en konsert for å slette den.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>⚡ Generer konsertansvarlig</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge blue">⚡ Generer konsertansvarlig</span> for å automatisk tildele ansvarlig lærer til alle konserter med innslag.</li>
+              <li>Læreren med flest elever på konserten blir ansvarlig. Ved uavgjort velges den med færrest elever på andre konserter.</li>
+              <li>Lærere med 0 innslag tildeles aldri. Lærere med 1–2 innslag kun som siste utvei.</li>
+              <li>Du kan alltid overstyre manuelt ved å klikke ✏️ Endre på konsertens infoline.</li>
+            </ul>
+          </div>`
+      },
+      {
+        tab: '📋 Innslag',
+        html: `
+          <div class="tut-section">
+            <h3>📋 Legge til innslag</h3>
+            <ul>
+              <li>Velg en konsert og fyll ut skjemaet: Elev, Instrument, Stykke, Varighet, Akkompagnement og Merknader.</li>
+              <li>Bruk <span class="tut-badge gold">🎓 Register</span>-knappen ved Elev-feltet for å velge fra elevregisteret.</li>
+              <li>Trykk <span class="tut-badge gold">+ Legg til</span> eller Enter for å legge til innslaget.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>✏️ Redigere og flytte innslag</h3>
+            <ul>
+              <li>Klikk ✏️ på en rad for å redigere. Klikk ✓ for å lagre eller ✕ for å avbryte.</li>
+              <li>Merk av én eller flere elever med avkrysningsboksen til venstre, så dukker flytte-baren opp.</li>
+              <li>Bruk <span class="tut-badge">▼</span>-filteret i Lærer-kolonnen for å vise kun én lærers innslag — velg alle og flytt dem samlet.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>📊 Statistikk</h3>
+            <ul>
+              <li>Under tabellen vises antall innslag, antall spilt og estimert totalvarighet.</li>
+              <li>Totalvarighet blir <span style="color:#c0392b;font-weight:700;">rød</span> når den overstiger 30 minutter.</li>
+            </ul>
+          </div>`
+      },
+      {
+        tab: '🎓 Elevregister',
+        html: `
+          <div class="tut-section">
+            <h3>🎓 Elevregister — velg elever raskt</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge gold">🎓 Elevregister</span> i verktøylinjen eller <span class="tut-badge gold">🎓 Register</span> ved Elev-feltet.</li>
+              <li>Søk etter navn, velg én eller flere elever, og trykk <strong>Sett inn i skjema</strong>.</li>
+              <li>Aktiver <strong>Gruppe</strong> for å sette inn flere elever som én gruppeoppføring.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>🎓 Administrer register</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge blue">🎓 Administrer register</span> i Mine elever-baren for å importere, redigere og slette elever.</li>
+              <li>Dra og slipp CSV-filen fra Speedadmin rett inn i dropzone-feltet — navn hentes automatisk ut.</li>
+              <li>Klikk ✏️ for å redigere et navn, ✕ for å slette. Lagre til JSON for å gjenbruke.</li>
+            </ul>
+          </div>`
+      },
+      {
+        tab: '💾 Data',
+        html: `
+          <div class="tut-section">
+            <h3>💾 Lagre og laste inn data</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge">💾 Lagre JSON</span> for å laste ned en sikkerhetskopi av alle konserter.</li>
+              <li>Trykk <span class="tut-badge">📂 Last inn JSON</span> for å gjenopprette fra en backup-fil.</li>
+              <li>Data lagres også automatisk i nettleseren (localStorage) mellom økter.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>🖨 Utskrift</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge">🖨 Skriv ut</span> for å skrive ut programmet for aktiv konsert.</li>
+              <li>«Har spilt»-kolonnen skjules automatisk ved utskrift.</li>
+            </ul>
+          </div>`
+      }
+    ],
+    lærer: [
+      {
+        tab: '🗂 Oversikt',
+        html: `
+          <div class="tut-section">
+            <h3>🗂 Se konserter</h3>
+            <ul>
+              <li>Konserter er organisert etter lokasjon. Trykk på en konsert for å åpne den.</li>
+              <li>Konserter der du er <span class="tut-badge blue">konsertansvarlig</span> vises med blå kant.</li>
+              <li>Hold musen over en konsert for å se antall innslag og estimert varighet.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>📋 Mine elever</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge blue">📋 Mine elever</span> for å se en oversikt over alle dine elever på tvers av konserter.</li>
+              <li>Bruk søkefeltet for å finne en bestemt elev raskt.</li>
+            </ul>
+          </div>`
+      },
+      {
+        tab: '📋 Innslag',
+        html: `
+          <div class="tut-section">
+            <h3>📋 Legge til dine elever</h3>
+            <ul>
+              <li>Velg en konsert og fyll ut skjemaet: Elev, Instrument, Stykke, Varighet og eventuelle merknader.</li>
+              <li>Bruk <span class="tut-badge gold">🎓 Register</span>-knappen ved Elev-feltet for å velge fra ditt elevregister — mye raskere enn å skrive!</li>
+              <li>Trykk <span class="tut-badge gold">+ Legg til</span> eller Enter for å legge til.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>✏️ Redigere og flytte egne innslag</h3>
+            <ul>
+              <li>Du kan kun redigere og flytte <strong>dine egne elevers innslag</strong>.</li>
+              <li>Merk av med avkrysningsboksen til venstre for å flytte elever til en annen konsert.</li>
+              <li>Merk av <strong>Har spilt</strong> under konserten for å markere at en elev har fremført.</li>
+            </ul>
+          </div>`
+      },
+      {
+        tab: '🎓 Elevregister',
+        html: `
+          <div class="tut-section">
+            <h3>🎓 Bruke elevregisteret</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge gold">🎓 Register</span> ved Elev-feltet for å velge elev fra listen istedet for å skrive.</li>
+              <li>Søk etter navn, klikk på eleven og trykk <strong>Sett inn i skjema</strong>.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>🎓 Administrer ditt register</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge blue">🎓 Administrer register</span> for å importere elever fra Speedadmin.</li>
+              <li>Dra og slipp CSV-filen fra Speedadmin inn i feltet — navn hentes automatisk ut.</li>
+              <li>Du kan redigere navn (✏️) og slette elever (✕) direkte i listen.</li>
+              <li>Lagre til JSON for å ta vare på listen til neste gang.</li>
+            </ul>
+          </div>`
+      }
+    ]
+  };
+
+  let tutAktivTab = 0;
+
+  function visTutorial() {
+    const isAdmin = påloggetBruker === '__admin__';
+    const innhold = isAdmin ? tutorialInnhold.admin : tutorialInnhold.lærer;
+    tutAktivTab = 0;
+    renderTutorial(innhold);
+    document.getElementById('tutOverlay').classList.add('vis');
+  }
+
+  function skjulTutorial() {
+    document.getElementById('tutOverlay').classList.remove('vis');
+  }
+
+  function renderTutorial(innhold) {
+    const tabs = document.getElementById('tutTabs');
+    const body = document.getElementById('tutBody');
+    tabs.innerHTML = innhold.map((seksjon, i) =>
+      '<div class="tut-tab' + (i === tutAktivTab ? ' active' : '') + '" onclick="byttTutTab(' + i + ')">' + seksjon.tab + '</div>'
+    ).join('');
+    body.innerHTML = innhold[tutAktivTab].html;
+  }
+
+  function byttTutTab(i) {
+    const isAdmin = påloggetBruker === '__admin__';
+    const innhold = isAdmin ? tutorialInnhold.admin : tutorialInnhold.lærer;
+    tutAktivTab = i;
+    renderTutorial(innhold);
+  }
+
+  // Close on overlay click
+  // ── INIT ─────────────────────────────────────────────────
+  lastLokal();
+  byggLoginListe();
+  renderTabs();
+  startFirebaseSync();
+
+  // Auto-login fra URL-parameter ?bruker=Navn
+  (function() {
+    const params = new URLSearchParams(window.location.search);
+    const bruker = params.get('bruker');
+    if (!bruker) return;
+    const navn = bruker === 'admin' ? '__admin__' : bruker;
+    // Sjekk at brukeren finnes
+    const gyldig = navn === '__admin__' || Object.keys(lærerInstrumenter).includes(navn);
+    if (gyldig) loggInn(navn);
+  })();
+</script>
+
+</body>
+</html>
