@@ -113,7 +113,7 @@
   .lokasjon-rad { display: flex; align-items: stretch; gap: 0; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--line); background: #fff; min-height: 56px; }
   .lokasjon-label { background: var(--ink); color: var(--gold-light); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; padding: 0 1.1rem; display: flex; align-items: center; min-width: 145px; width: 145px; flex-shrink: 0; font-family: 'DM Sans', sans-serif; text-transform: uppercase; }
   .lokasjon-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.5rem 0.6rem; align-items: center; flex: 1; }
-  .concert-tab { background: var(--cream); border: 1.5px solid var(--line); border-radius: 8px; padding: 0.6rem 1.1rem; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink); display: inline-flex; align-items: center; gap: 0.4rem; -webkit-tap-highlight-color: transparent; white-space: nowrap; transition: border-color 0.15s, background 0.15s; font-weight: 500; }
+  .concert-tab { background: #f8f8f8; border: 1.5px solid #ccc; border-radius: 8px; padding: 0.6rem 1.1rem; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink); display: inline-flex; align-items: center; gap: 0.4rem; -webkit-tap-highlight-color: transparent; white-space: nowrap; transition: border-color 0.15s, background 0.15s; font-weight: 500; }
   .concert-tab:hover { border-color: var(--gold); background: #fffdf5; }
 
 
@@ -190,7 +190,7 @@
   }
   .tab-wrap:hover .tab-tooltip { visibility: visible; opacity: 1; }
 
-  .concert-tab.active { background: var(--gold); color: #fff; border-color: var(--gold); }
+  .concert-tab.active { background: #fff; color: var(--ink); border-color: var(--ink); border-width: 2px; font-weight: 700; }
   .tab-group { display: inline-flex; align-items: stretch; border-radius: 8px; overflow: hidden; border: 1.5px solid var(--line); }
   .tab-group .concert-tab { border-radius: 0; border: none; border-right: 1px solid var(--line); }
   .tab-group .concert-tab.active { border-right-color: rgba(255,255,255,0.3); }
@@ -449,6 +449,33 @@
 <body>
 
 <!-- ── LOGIN PAGE ── -->
+
+  <!-- TEMP TESTINNLOGGING -->
+  <div id="testLoginBar" style="background:#333;color:#fff;padding:0.4rem 1rem;text-align:center;font-size:0.82rem;font-family:'DM Sans',sans-serif;">
+    🧪 Testmodus: Logg inn som 
+    <select onchange="testLoggInn(this.value)" style="margin-left:0.5rem;font-size:0.82rem;border-radius:4px;padding:2px 6px;">
+      <option value="">-- velg --</option>
+      <option value="__admin__">Admin</option>
+      <option value="Eva Therese">Eva Therese</option>
+      <option value="Edin">Edin</option>
+      <option value="Jacob">Jacob</option>
+      <option value="Kalina">Kalina</option>
+      <option value="Agnes">Agnes</option>
+      <option value="Bjørnar">Bjørnar</option>
+      <option value="Håkan">Håkan</option>
+      <option value="Tom">Tom</option>
+      <option value="Øystein">Øystein</option>
+      <option value="Barbara">Barbara</option>
+      <option value="Fredrik">Fredrik</option>
+      <option value="Cecilie">Cecilie</option>
+      <option value="Tone">Tone</option>
+      <option value="Magne">Magne</option>
+      <option value="Gustav">Gustav</option>
+      <option value="Roger">Roger</option>
+      <option value="Nadezhda">Nadezhda</option>
+    </select>
+  </div>
+
 <div id="loginPage">
   <div class="login-box">
     <h2>Konsert<span>liste</span></h2>
@@ -474,7 +501,7 @@
     <span>Innlogget som</span>
     <span class="user-name" id="userBarName"></span>
     <button class="logout-btn" onclick="visLeggTilApp()" style="background:#4caf50;color:#fff;border-color:#4caf50;">📱 Legg til app</button>
-    <button class="logout-btn" id="byttTilLærerBtn" onclick="byttTilLærer()" style="display:none;background:#5b9bd5;color:#fff;border-color:#5b9bd5;">👤 Lærervisning</button>
+    <button class="logout-btn" id="byttTilLærerBtn" onclick="byttTilLærer()" style="display:none;background:#5b9bd5;color:#fff;border-color:#5b9bd5;">👤&nbsp;Lærervisning</button>
     <button class="logout-btn logout-btn-hjelp" onclick="visTutorial()">❓ Hjelp</button>
   </div>
 
@@ -918,6 +945,31 @@
           ${navn}<span class="inst-badge">${lærerInstrumenter[navn].join(', ')}</span>
         </button>`
       ).join('');
+  }
+
+
+  function testLoggInn(navn) {
+    if (!navn) return;
+    if (påloggetBruker) {
+      // Already logged in — switch directly
+      påloggetBruker = navn;
+      document.getElementById('userBarName').textContent = navn === '__admin__' ? 'Admin' : navn;
+      if (navn === '__admin__') {
+        document.getElementById('adminTools').classList.add('vis');
+        document.getElementById('mineEleverBar').classList.remove('vis');
+        document.getElementById('faneTittel').textContent = 'Konserter — Admin';
+        visNyKonsertForm();
+      } else {
+        document.getElementById('adminTools').classList.remove('vis');
+        document.getElementById('mineEleverBar').classList.add('vis');
+        document.getElementById('faneTittel').textContent = 'Velg konsert';
+        skjulNyKonsertForm();
+        lastElevLokal(); lastElevFraFirebase();
+      }
+      renderTabs(); skjulKonsertvisning();
+    } else {
+      loggInn(navn);
+    }
   }
 
   function loggInn(navn) {
@@ -2103,7 +2155,7 @@
     document.getElementById('mineEleverBar').classList.add('vis');
     document.getElementById('faneTittel').textContent = 'Velg konsert';
     // Add "back to admin" button
-    document.getElementById('byttTilLærerBtn').textContent = '🔑 Admin';
+    document.getElementById('byttTilLærerBtn').innerHTML = '🔑&nbsp;Admin';
     document.getElementById('byttTilLærerBtn').onclick = byttTilAdmin;
     document.getElementById('byttTilLærerBtn').style.display = 'inline-block';
     document.getElementById('byttTilLærerBtn').style.borderColor = 'var(--gold)';
@@ -2119,7 +2171,7 @@
     document.getElementById('adminTools').classList.add('vis');
     document.getElementById('mineEleverBar').classList.remove('vis');
     document.getElementById('faneTittel').textContent = 'Konserter — Admin';
-    document.getElementById('byttTilLærerBtn').textContent = '👤 Lærervisning';
+    document.getElementById('byttTilLærerBtn').innerHTML = '👤&nbsp;Lærervisning';
     document.getElementById('byttTilLærerBtn').onclick = byttTilLærer;
     document.getElementById('byttTilLærerBtn').style.borderColor = '#5b9bd5';
     document.getElementById('byttTilLærerBtn').style.background = '#5b9bd5';
