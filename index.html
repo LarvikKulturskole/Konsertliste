@@ -1,0 +1,2280 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Konsertliste</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --cream: #f8f4ed;
+    --gold: #c9963b;
+    --gold-light: #e8c97a;
+    --rust: #8b3a3a;
+    --line: #d4c9b5;
+    --played: #2d6a4f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+
+  /* ── LOGIN PAGE ── */
+  #loginPage {
+    min-height: 100vh;
+    background: var(--ink);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+  #loginPage.skjult { display: none; }
+
+  .login-box {
+    background: var(--cream);
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .login-box h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-bottom: 0.2rem; text-align: center; }
+  .login-box h2 span { color: var(--gold); }
+  .login-box p { color: #888; font-size: 0.9rem; margin-bottom: 1rem; text-align: center; }
+
+  .login-admin-btn {
+    display: block;
+    width: 100%;
+    background: var(--ink);
+    color: var(--gold-light);
+    border: 2px solid var(--gold);
+    border-radius: 10px;
+    padding: 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    margin-bottom: 1rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .login-admin-btn:active { background: #2d2d4e; }
+
+  .login-divider { border: none; border-top: 1px solid var(--line); margin-bottom: 1rem; }
+
+  .login-names { display: flex; flex-direction: column; gap: 0.5rem; }
+  .login-name-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    background: #fff;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .login-name-btn:active { border-color: var(--gold); background: #fffdf5; }
+  .inst-badge { font-size: 0.72rem; background: var(--cream); border: 1px solid var(--line); border-radius: 20px; padding: 2px 8px; color: #888; margin-left: auto; white-space: nowrap; }
+
+  /* ── MAIN APP ── */
+  #appPage { display: none; padding: 1.5rem 1rem 4rem; }
+  #appPage.vis { display: block; }
+
+  header { text-align: center; margin-bottom: 1.25rem; }
+  header::after { content: ''; display: block; width: 60px; height: 3px; background: var(--gold); margin: 0.6rem auto 0; }
+  h1 { font-family: 'Playfair Display', serif; font-size: clamp(1.6rem, 5vw, 2.8rem); }
+  h1 span { color: var(--gold); }
+
+  .user-bar { display: flex; align-items: center; gap: 0.6rem; background: var(--ink); color: var(--cream); padding: 0.5rem 1rem; border-radius: 30px; font-size: 0.82rem; margin: 0 auto 1.25rem; width: fit-content; flex-wrap: wrap; justify-content: center; }
+  .user-name { font-weight: 600; color: var(--gold-light); }
+  .logout-btn { background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.45); color: #fff; border-radius: 20px; padding: 4px 13px; font-size: 0.8rem; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; transition: background 0.15s, border-color 0.15s; }
+  .logout-btn:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.7); }
+  .logout-btn-hjelp { background: var(--gold) !important; border-color: var(--gold) !important; color: #fff !important; }
+  .logout-btn-hjelp:hover { background: #a87a28 !important; border-color: #a87a28 !important; }
+
+  /* ADMIN TOOLS */
+  .admin-tools { display: none; justify-content: flex-end; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .admin-tools.vis { display: flex; }
+  .btn-tool { background: none; border: 1.5px solid var(--line); border-radius: 7px; padding: 0.4rem 0.85rem; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer; color: var(--ink); }
+  .btn-tool:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* TABS */
+  .concerts-section { margin-bottom: 1.25rem; }
+  .concerts-label { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa; margin-bottom: 0.6rem; }
+  /* CONCERT GRID */
+  .concerts-section { margin-bottom: 1.5rem; }
+  .concerts-label { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa; margin-bottom: 0.75rem; }
+  .lokasjon-grid { display: flex; flex-direction: column; gap: 0.5rem; }
+  .lokasjon-rad { display: flex; align-items: stretch; gap: 0; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--line); background: #fff; min-height: 56px; }
+  .lokasjon-label { background: var(--ink); color: var(--gold-light); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; padding: 0 1.1rem; display: flex; align-items: center; min-width: 145px; width: 145px; flex-shrink: 0; font-family: 'DM Sans', sans-serif; text-transform: uppercase; }
+  .lokasjon-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.5rem 0.6rem; align-items: center; flex: 1; }
+  .concert-tab { background: var(--cream); border: 1.5px solid var(--line); border-radius: 8px; padding: 0.6rem 1.1rem; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink); display: inline-flex; align-items: center; gap: 0.4rem; -webkit-tap-highlight-color: transparent; white-space: nowrap; transition: border-color 0.15s, background 0.15s; font-weight: 500; }
+  .concert-tab:hover { border-color: var(--gold); background: #fffdf5; }
+
+
+  /* Tutorial modal */
+  .tut-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:600; align-items:center; justify-content:center; padding:1rem; }
+  .tut-overlay.vis { display:flex; }
+  .tut-box { background:#fff; border-radius:16px; width:min(680px,96vw); max-height:88vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 16px 60px rgba(0,0,0,0.35); }
+  .tut-header { background:var(--ink); color:var(--cream); padding:1.2rem 1.5rem; display:flex; align-items:center; gap:1rem; }
+  .tut-header h2 { font-family:'Playfair Display',serif; font-size:1.3rem; margin:0; flex:1; }
+  .tut-header .tut-close { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); color:#fff; border-radius:7px; padding:0.3rem 0.75rem; cursor:pointer; font-size:0.85rem; font-family:'DM Sans',sans-serif; }
+  .tut-tabs { display:flex; border-bottom:2px solid #eee; background:#fafafa; }
+  .tut-tab { padding:0.7rem 1.25rem; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.85rem; color:#888; border-bottom:2px solid transparent; margin-bottom:-2px; transition:color 0.15s; white-space:nowrap; }
+  .tut-tab.active { color:var(--ink); border-bottom-color:var(--gold); font-weight:600; }
+  .tut-body { overflow-y:auto; padding:1.5rem; flex:1; }
+  .tut-section { margin-bottom:1.5rem; }
+  .tut-section:last-child { margin-bottom:0; }
+  .tut-section h3 { font-family:'Playfair Display',serif; font-size:1rem; color:var(--ink); margin:0 0 0.5rem; display:flex; align-items:center; gap:0.5rem; }
+  .tut-section p, .tut-section li { font-size:0.88rem; color:#444; line-height:1.65; margin:0 0 0.3rem; }
+  .tut-section ul { padding-left:1.2rem; margin:0.3rem 0; }
+  .tut-badge { display:inline-block; background:var(--ink); color:var(--gold-light); border-radius:5px; padding:1px 7px; font-size:0.75rem; font-family:'DM Sans',sans-serif; vertical-align:middle; }
+  .tut-badge.gold { background:var(--gold); color:#fff; }
+  .tut-badge.blue { background:#3b82c4; color:#fff; }
+  .tut-footer { padding:1rem 1.5rem; border-top:1px solid #eee; display:flex; justify-content:flex-end; }
+  .tut-ok-btn { background:var(--gold); color:#fff; border:none; border-radius:8px; padding:0.6rem 1.5rem; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; cursor:pointer; }
+
+
+  /* Firebase sync indicator */
+  #fbStatus { display:none; position:fixed; bottom:1rem; right:1rem; background:var(--ink); color:var(--cream); border-radius:20px; padding:0.35rem 0.85rem; font-size:0.75rem; font-family:'DM Sans',sans-serif; align-items:center; gap:0.4rem; z-index:500; box-shadow:0 2px 12px rgba(0,0,0,0.2); transition:opacity 0.5s; }
+  #fbStatus .fb-dot { width:8px; height:8px; border-radius:50%; background:#4caf50; animation:fbpulse 2s infinite; }
+  @keyframes fbpulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  #fbStatus.syncing .fb-dot { background:var(--gold); }
+
+  /* Tab tooltip */
+  .tab-wrap { position: relative; display: inline-block; }
+  .tab-tooltip {
+    visibility: hidden; opacity: 0;
+    position: fixed;
+    background: var(--ink); color: var(--cream);
+    border-radius: 8px; padding: 0.5rem 0.8rem;
+    font-size: 0.78rem; font-family: 'DM Sans', sans-serif;
+    white-space: nowrap; pointer-events: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    transition: opacity 0.15s, visibility 0.15s;
+    z-index: 9999; line-height: 1.7;
+  }
+  .tab-wrap:hover .tab-tooltip { visibility: visible; opacity: 1; }
+
+  .concert-tab.active { background: var(--gold); color: #fff; border-color: var(--gold); }
+  .tab-group { display: inline-flex; align-items: stretch; border-radius: 8px; overflow: hidden; border: 1.5px solid var(--line); }
+  .tab-group .concert-tab { border-radius: 0; border: none; border-right: 1px solid var(--line); }
+  .tab-group .concert-tab.active { border-right-color: rgba(255,255,255,0.3); }
+  .tab-slett-btn { background: var(--cream); border: none; color: #bbb; cursor: pointer; padding: 0 8px; font-size: 0.85rem; line-height: 1; }
+  .tab-slett-btn:hover { background: #fdecea; color: var(--rust); }
+  .tab-del { color: rgba(255,255,255,0.6); padding: 0 2px; font-size: 0.75rem; }
+  .concert-tab:not(.active) .tab-del { color: #bbb; }
+  .concert-tab:not(.active) .tab-del:hover { color: var(--rust); }
+  .ingen-tabs { color: #bbb; font-size: 0.82rem; padding: 0.2rem 0; }
+  .btn-new-concert { background: var(--gold); color: #fff; border: none; border-radius: 8px; padding: 0.5rem 1rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
+  .btn-new-concert:hover { background: #a87a28; }
+
+  /* NEW CONCERT FORM */
+  .new-concert-form { display: none; background: #fff; border: 1.5px solid var(--gold); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
+  .new-concert-form.vis { display: block; }
+  .ncf-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .ncf-btns { display: flex; gap: 0.5rem; }
+  .ncf-label { display: block; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 5px; }
+  .ncf-input { width: 100%; border: 1.5px solid var(--line); border-radius: 7px; padding: 0.5rem 0.7rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink); background: var(--cream); outline: none; }
+  .ncf-input:focus { border-color: var(--gold); }
+  .btn-opprett { background: var(--gold); color: #fff; border: none; border-radius: 7px; padding: 0.55rem 1.1rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; }
+  .btn-avbryt { background: none; border: 1.5px solid var(--line); border-radius: 7px; padding: 0.55rem 0.9rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; color: #888; }
+
+  /* META BAR */
+  .meta-bar { background: var(--ink); color: var(--cream); border-radius: 12px; padding: 0.9rem 1.25rem; display: none; gap: 1.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .meta-bar.vis { display: flex; }
+  .meta-bar label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-light); display: block; margin-bottom: 2px; }
+  .meta-val { font-family: 'Playfair Display', serif; font-size: 0.95rem; color: #fff; }
+
+  /* ADD FORM */
+  .add-form { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 1.25rem; display: none; margin-bottom: 1.5rem; }
+  .add-form.vis { display: block; }
+  .add-form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .add-form-grid2 { display: grid; grid-template-columns: 1fr 1fr 1.5fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .add-form-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .f-label { display: block; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 5px; font-weight: 500; }
+  .f-input { width: 100%; border: 1.5px solid var(--line); border-radius: 7px; padding: 0.5rem 0.75rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink); background: var(--cream); outline: none; }
+  .f-input:focus { border-color: var(--gold); background: #fff; }
+  .btn-add { background: var(--gold); color: #fff; border: none; border-radius: 7px; padding: 0.55rem 1.25rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; }
+  .btn-print { background: transparent; color: var(--ink); border: 1.5px solid var(--line); border-radius: 7px; padding: 0.55rem 0.9rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; }
+
+  /* TABLE */
+  .table-wrap { display: none; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: #fff; overflow-x: auto; }
+  .table-wrap.vis { display: block; }
+  table { width: 100%; border-collapse: collapse; min-width: 700px; }
+  .th-lærer-wrap { display: flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
+  .lærer-filter-btn { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: var(--gold-light); border-radius: 4px; padding: 1px 6px; font-size: 0.65rem; cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
+  .lærer-filter-btn:hover { background: rgba(255,255,255,0.25); }
+  .lærer-filter-btn.aktiv { background: var(--gold); border-color: var(--gold); color: #fff; }
+  .lærer-filter-popup { position: absolute; background: var(--ink); border: 1px solid var(--gold); border-radius: 8px; padding: 0.4rem 0; z-index: 100; min-width: 160px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); top: 100%; left: 0; }
+  .lærer-filter-popup button { display: block; width: 100%; text-align: left; background: none; border: none; color: var(--cream); padding: 0.35rem 0.85rem; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer; }
+  .lærer-filter-popup button:hover { background: rgba(255,255,255,0.1); }
+  .lærer-filter-popup button.aktiv { color: var(--gold); font-weight: 600; }
+  .th-lærer-pos { position: relative; }
+  thead th { background: var(--ink); color: var(--gold-light); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.8rem 0.75rem; text-align: left; font-weight: 500; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--line); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr.played { background: #f0faf4; }
+  tbody td { padding: 0.75rem 0.75rem; font-size: 0.9rem; vertical-align: middle; }
+  .num-col { color: #bbb; font-size: 0.78rem; width: 30px; }
+  .instrument-badge { display: inline-block; background: var(--cream); border: 1px solid var(--line); border-radius: 20px; padding: 2px 8px; font-size: 0.78rem; color: #666; }
+  .played-badge { background: #d4edda; border-color: #a8d5b5; color: var(--played); }
+  .duration { color: #777; font-size: 0.85rem; }
+  .check-cell { text-align: center; }
+  .check-cell input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--played); cursor: pointer; }
+  .del-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.95rem; padding: 0 3px; }
+  .del-btn:hover { color: var(--rust); }
+  .edit-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.95rem; padding: 0 3px; }
+  .edit-btn:hover { color: var(--gold); }
+  .edit-row td { background: #fffdf5; padding: 0.4rem 0.4rem !important; }
+  .edit-row input, .edit-row select { width: 100%; border: 1.5px solid var(--gold); border-radius: 5px; padding: 0.28rem 0.4rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; background: #fff; color: var(--ink); outline: none; }
+  .save-btn { background: var(--gold); color: #fff; border: none; border-radius: 5px; padding: 0.28rem 0.55rem; cursor: pointer; font-size: 0.82rem; font-family: 'DM Sans', sans-serif; margin-right: 3px; }
+  .cancel-btn { background: none; border: 1.5px solid #ccc; border-radius: 5px; padding: 0.28rem 0.55rem; cursor: pointer; font-size: 0.82rem; font-family: 'DM Sans', sans-serif; color: #888; }
+  .empty-state { text-align: center; padding: 2.5rem 1rem; color: #bbb; }
+  .empty-state p { font-size: 1rem; margin-top: 0.4rem; }
+
+  /* Move feature */
+  .move-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.9rem; padding: 0 3px; }
+  .move-btn:hover { color: #5b9bd5; }
+  tbody tr.valgt { background: #fff8e8 !important; }
+  .sel-col { width: 28px; text-align: center; }
+
+  .flytt-bar { display: none; align-items: center; gap: 1rem; background: var(--gold); color: #fff; border-radius: 10px; padding: 0.6rem 1.25rem; margin-bottom: 1rem; font-size: 0.9rem; flex-wrap: wrap; }
+  .flytt-bar.vis { display: flex; }
+  .flytt-bar .flytt-knapp { background: #fff; color: var(--gold); border: none; border-radius: 6px; padding: 0.35rem 0.85rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+  .flytt-bar .avbryt-flytt { background: rgba(255,255,255,0.25); color: #fff; border: none; border-radius: 6px; padding: 0.35rem 0.75rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; margin-left: auto; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 500; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-overlay.vis { display: flex; }
+  .modal-box { background: var(--cream); border-radius: 14px; padding: 1.5rem; width: min(420px, 92vw); box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+  .modal-box h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; margin-bottom: 0.4rem; }
+  .modal-box p { color: #888; font-size: 0.85rem; margin-bottom: 1rem; }
+  .modal-konsert-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; max-height: 50vh; overflow-y: auto; }
+  .modal-konsert-btn { background: #fff; border: 1.5px solid var(--line); border-radius: 8px; padding: 0.65rem 1rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink); cursor: pointer; text-align: left; width: 100%; }
+  .modal-konsert-btn:hover { border-color: var(--gold); background: #fffdf5; }
+  .modal-avbryt { background: none; border: 1.5px solid var(--line); border-radius: 7px; padding: 0.5rem 1rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; color: #888; }
+
+  .stats { display: none; gap: 1.25rem; font-size: 0.8rem; color: #888; padding: 0.75rem 0.25rem; flex-wrap: wrap; }
+  .stats.vis { display: flex; }
+  .stats strong { color: var(--ink); }
+
+  /* PRINT HEADER */
+  #printInfo { display: none; margin-bottom: 1rem; }
+
+  @media (max-width: 600px) {
+    .add-form-grid { grid-template-columns: 1fr 1fr; }
+    .add-form-grid2 { grid-template-columns: 1fr 1fr; }
+    .ncf-grid { grid-template-columns: 1fr 1fr; }
+    .lokasjon-label { min-width: 90px; width: 90px; font-size: 0.65rem; padding: 0 0.5rem; letter-spacing: 0; }
+    .concert-tab { font-size: 0.8rem; padding: 0.45rem 0.7rem; }
+    .inst-badge { display: none; }
+  }
+
+  @media print {
+    @page { size: A4 landscape; margin: 12mm 15mm; }
+    #loginPage, .user-bar, .admin-tools, .concerts-section,
+    .new-concert-form, .add-form, .del-btn, .edit-btn, .edit-row,
+    .no-print, .btn-print { display: none !important; }
+    #printInfo { display: block !important; }
+    #appPage { padding: 0; }
+    body { background: #fff; }
+    .meta-bar { background: none !important; color: #000 !important; border: none; padding: 0; margin-bottom: 0.5rem; }
+    .meta-val { color: #000 !important; }
+    .table-wrap { border: 1px solid #ccc; overflow: visible; }
+    table { min-width: unset; }
+    tbody td:nth-child(2) { font-weight: 700; }
+    tbody td:nth-child(3) .instrument-badge { font-size: 1.1rem; padding: 3px 12px; }
+    #printLokasjon { font-weight: 700; font-size: 1.4rem !important; color: #000; font-family: 'Playfair Display', serif; }
+    #printDato { font-size: 1.4rem !important; font-family: 'Playfair Display', serif; font-weight: 700; }
+    th:last-child, td:last-child { display: none !important; }
+    .sel-col { display: none !important; }
+    .har-spilt-col { display: none !important; }
+    .flytt-bar { display: none !important; }
+  }
+
+  /* ── ELEVREGISTER ── */
+  /* ─ ANSVARLIG TAB (blå) ─ */
+  .concert-tab.ansvarlig-tab { border-color: #3b82c4; color: #3b82c4; background: #f0f5ff; }
+  .concert-tab.ansvarlig-tab:hover { border-color: #2563a8; background: #e0edff; }
+  .concert-tab.ansvarlig-tab.active { background: #3b82c4; border-color: #3b82c4; color: #fff; }
+
+  /* ─ MINE ELEVER BAR ─ */
+  .mine-elever-bar { display: none; justify-content: flex-end; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .mine-elever-bar.vis { display: flex; }
+  .mine-elever-sok-wrap { position: relative; }
+  .mine-elever-sok-input { border: 1.5px solid var(--line); border-radius: 8px; padding: 0.45rem 0.85rem; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; width: 220px; outline: none; background: #fff; }
+  .mine-elever-sok-input:focus { border-color: #3b82c4; }
+  .mine-elever-sok-res { position: absolute; top: calc(100% + 5px); right: 0; background: #fff; border: 1.5px solid var(--line); border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); z-index: 400; min-width: 320px; max-height: 320px; overflow-y: auto; display: none; }
+  .mine-elever-sok-res.vis { display: block; }
+  .mes-item { display: flex; align-items: center; padding: 0.6rem 0.85rem; gap: 0.75rem; border-bottom: 1px solid var(--line); }
+  .mes-item:last-child { border-bottom: none; }
+  .mes-item:hover { background: #fffdf5; }
+  .mes-navn { flex: 1; }
+  .mes-navn strong { font-size: 0.88rem; display: block; }
+  .mes-navn span { font-size: 0.75rem; color: #888; }
+  .mes-btn { background: #3b82c4; color: #fff; border: none; border-radius: 5px; padding: 0.28rem 0.65rem; font-size: 0.78rem; cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; flex-shrink: 0; }
+  .mes-btn:hover { background: #2563a8; }
+  .mes-tom { padding: 0.75rem 1rem; color: #aaa; font-size: 0.85rem; text-align: center; }
+  .btn-mine-elever { background: none; border: 1.5px solid #3b82c4; border-radius: 7px; padding: 0.4rem 0.85rem; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer; color: #3b82c4; font-weight: 600; }
+  .btn-mine-elever:hover { background: #3b82c4; color: #fff; }
+
+  /* ─ MINE ELEVER MODAL ─ */
+  .mine-modal { display: none; position: fixed; inset: 0; z-index: 610; background: rgba(0,0,0,0.55); align-items: flex-start; justify-content: center; padding: 1.5rem 1rem; overflow-y: auto; }
+  .mine-modal.vis { display: flex; }
+  .mine-box { background: var(--cream); border-radius: 16px; width: min(820px,96vw); box-shadow: 0 16px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; max-height: 88vh; }
+  .mine-hdr { background: var(--ink); color: var(--cream); border-radius: 16px 16px 0 0; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 0.75rem; }
+  .mine-hdr h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--gold-light); flex: 1; margin: 0; }
+  .mine-hbtn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); color: #fff; border-radius: 7px; padding: 0.38rem 0.75rem; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; cursor: pointer; }
+  .mine-hbtn:hover { background: rgba(255,255,255,0.2); }
+  .mine-content { flex: 1; overflow-y: auto; padding: 1rem 1.25rem; }
+  .mine-group { margin-bottom: 1.75rem; }
+  .mine-group-hdr { display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--gold); padding-bottom: 0.4rem; margin-bottom: 0.6rem; }
+  .mine-group-tittel { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--gold); flex: 1; }
+  .mine-apne-btn { background: none; border: 1.5px solid var(--gold); color: var(--gold); border-radius: 5px; padding: 0.18rem 0.55rem; font-size: 0.75rem; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .mine-apne-btn:hover { background: var(--gold); color: #fff; }
+  .mine-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid #f0eee8; font-size: 0.88rem; flex-wrap: wrap; }
+  .mine-row:last-child { border-bottom: none; }
+  .mine-row-navn { font-weight: 600; min-width: 170px; }
+  .mine-row-stykke { flex: 1; color: #555; min-width: 120px; }
+  .mine-row-var { color: #999; font-size: 0.82rem; white-space: nowrap; }
+  .mine-spilt { background: #d4edda; color: var(--played); border: 1px solid #a8d5b5; border-radius: 20px; padding: 1px 8px; font-size: 0.72rem; }
+  .mine-empty { text-align: center; padding: 2.5rem; color: #bbb; font-size: 0.9rem; }
+  .mine-stats-bar { background: var(--ink); color: var(--cream); border-radius: 10px; padding: 0.75rem 1.25rem; margin-bottom: 1rem; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.82rem; }
+  .mine-stats-bar span strong { color: var(--gold-light); }
+
+  /* ─ GRUPPE CHECKBOX ─ */
+  .gruppe-toggle { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: #666; cursor: pointer; user-select: none; }
+  .gruppe-toggle input { accent-color: var(--gold); width: 15px; height: 15px; cursor: pointer; }
+
+  /* ─ HAR SPILT COL (skjul på utskrift) ─ */
+  .har-spilt-col { }
+
+  .btn-tool-elev { border-color: var(--gold) !important; color: var(--gold) !important; font-weight: 600; }
+  .elev-modal { display:none; position:fixed; inset:0; z-index:600; background:rgba(0,0,0,0.55); align-items:flex-start; justify-content:center; padding:1.5rem 1rem; overflow-y:auto; }
+  .elev-modal.vis { display:flex; }
+  .elev-box { background:var(--cream); border-radius:16px; width:min(700px,96vw); box-shadow:0 16px 60px rgba(0,0,0,0.4); display:flex; flex-direction:column; max-height:88vh; }
+  .elev-header { background:var(--ink); color:var(--cream); border-radius:16px 16px 0 0; padding:1rem 1.25rem; display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
+  .elev-header h3 { font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--gold-light); flex:1; margin:0; }
+  .elev-hbtn { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.25); color:#fff; border-radius:7px; padding:0.38rem 0.75rem; font-family:'DM Sans',sans-serif; font-size:0.8rem; cursor:pointer; white-space:nowrap; }
+  .elev-hbtn:hover { background:rgba(255,255,255,0.2); }
+  .elev-dropzone { margin:1rem 1.25rem 0; border:2.5px dashed var(--line); border-radius:12px; padding:1.5rem; text-align:center; cursor:pointer; transition:border-color 0.2s,background 0.2s; background:#fff; }
+  .elev-dropzone.over { border-color:var(--gold); background:#fffdf5; }
+  .elev-dropzone .dz-icon { font-size:1.8rem; display:block; margin-bottom:0.3rem; }
+  .elev-dropzone strong { font-size:0.95rem; }
+  .elev-dropzone p { color:#aaa; font-size:0.82rem; margin-top:0.3rem; }
+  .elev-search-row { display:flex; gap:0.5rem; padding:0.85rem 1.25rem 0.4rem; align-items:center; }
+  .elev-search { flex:1; border:1.5px solid var(--line); border-radius:8px; padding:0.5rem 0.85rem; font-family:'DM Sans',sans-serif; font-size:0.95rem; outline:none; background:var(--cream); }
+  .elev-search:focus { border-color:var(--gold); }
+  .elev-count { font-size:0.78rem; color:#aaa; white-space:nowrap; }
+  .elev-list { flex:1; overflow-y:auto; padding:0 1.25rem 0.75rem; display:flex; flex-direction:column; gap:0.3rem; min-height:100px; }
+  .elev-item { display:flex; align-items:center; gap:0.75rem; background:#fff; border:1.5px solid var(--line); border-radius:9px; padding:0.55rem 0.85rem; cursor:pointer; transition:border-color 0.15s,background 0.15s; }
+  .elev-item:hover,.elev-item.selected { border-color:var(--gold); background:#fffdf5; }
+  .elev-check { width:18px; height:18px; accent-color:var(--gold); cursor:pointer; flex-shrink:0; }
+  .elev-navn { flex:1; font-weight:500; font-size:0.92rem; }
+  .elev-slett { background:none; border:none; color:#ddd; cursor:pointer; font-size:0.85rem; padding:0 2px; }
+  .elev-slett:hover { color:var(--rust); }
+  .elev-empty { text-align:center; padding:2rem; color:#bbb; font-size:0.88rem; line-height:1.6; }
+  .elev-footer { padding:0.85rem 1.25rem; border-top:1px solid var(--line); display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
+  .elev-sel-count { font-size:0.83rem; color:#888; flex:1; }
+  .elev-insert-btn { background:var(--gold); color:#fff; border:none; border-radius:8px; padding:0.6rem 1.25rem; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; cursor:pointer; }
+  .elev-insert-btn:disabled { background:#ccc; cursor:default; }
+  .elev-close-btn { background:none; border:1.5px solid var(--line); border-radius:8px; padding:0.6rem 1rem; font-family:'DM Sans',sans-serif; font-size:0.9rem; cursor:pointer; color:#888; }
+
+</style>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBqgP2YDnhAoMbnRELfAE-TqoCz46rj8KU",
+      authDomain: "larvik-kulturskole.firebaseapp.com",
+      databaseURL: "https://larvik-kulturskole-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "larvik-kulturskole",
+      storageBucket: "larvik-kulturskole.firebasestorage.app",
+      messagingSenderId: "286532494707",
+      appId: "1:286532494707:web:b8bfc7b6047c8a392b9106"
+    };
+    firebase.initializeApp(firebaseConfig);
+    window._db = firebase.database();
+    window._firebaseReady = true;
+  </script>
+</head>
+<body>
+
+<!-- ── LOGIN PAGE ── -->
+<div id="loginPage">
+  <div class="login-box">
+    <h2>Konsert<span>liste</span></h2>
+    <p>Velg ditt navn for å logge inn</p>
+
+    <button class="login-admin-btn" onclick="loggInn('__admin__')">
+      🔑 Admin (alle rettigheter)
+    </button>
+
+    <hr class="login-divider">
+
+    <div class="login-names" id="loginNames"></div>
+  </div>
+</div>
+
+<!-- ── APP PAGE ── -->
+<div id="appPage">
+
+  <header>
+    <h1>Konsert<span>liste</span></h1>
+  </header>
+
+  <div class="user-bar">
+    <span>Innlogget som</span>
+    <span class="user-name" id="userBarName"></span>
+    <button class="logout-btn" onclick="loggUt()">↩ Bytt bruker</button>
+    <button class="logout-btn logout-btn-hjelp" onclick="visTutorial()">❓ Hjelp</button>
+  </div>
+
+  <!-- Admin tools -->
+  <div class="admin-tools" id="adminTools">
+    <button class="btn-tool" onclick="document.getElementById('importFil').click()">📂 Last inn JSON</button>
+    <input type="file" id="importFil" accept=".json" style="display:none" onchange="importerJSON(event)">
+    <button class="btn-tool" onclick="eksporterJSON()">💾 Lagre JSON</button>
+    <button class="btn-tool" style="border-color:#5b9bd5;color:#5b9bd5;" onclick="genererKonsertansvarlig()">⚡ Generer konsertansvarlig</button>
+    <button class="btn-tool btn-tool-elev" onclick="visElevregister()">🎓 Elevregister</button>
+    <button class="btn-tool" style="border-color:var(--rust);color:var(--rust);" onclick="slettAlleKonserter()">🗑 Slett alle konserter</button>
+  </div>
+
+  <!-- Concert grid -->
+  <!-- Mine elever bar -->
+  <div class="mine-elever-bar" id="mineEleverBar">
+    <button class="btn-mine-elever" onclick="visMineElever()">&#128203; Mine elever</button>
+    <button class="btn-mine-elever" style="background:var(--gold);margin-left:0.5rem;" onclick="visAdminRegister()">&#127891; Administrer register</button>
+    <div class="mine-elever-sok-wrap">
+      <input class="mine-elever-sok-input" type="text" id="mineElevSokInput" placeholder="&#128269; Søk blant mine elever..." oninput="søkElevKonsert()" autocomplete="off">
+      <div class="mine-elever-sok-res" id="mineElevSokRes"></div>
+    </div>
+  </div>
+
+  <div class="concerts-section">
+    <div class="concerts-label" id="faneTittel">Konserter</div>
+    <div class="lokasjon-grid" id="lokasjonGrid"></div>
+  </div>
+
+  <!-- New concert form (admin only) -->
+  <div class="new-concert-form" id="newConcertForm">
+    <div class="ncf-grid">
+      <div>
+        <label class="ncf-label">Lokasjon</label>
+        <select id="ncLokasjon" class="ncf-input" onchange="autoFyllTid()">
+          <option value="">— Velg —</option>
+          <option>Orkestersalen</option><option>Pressverksalen</option>
+          <option>Kreativ sal</option><option>Bandrom</option><option>Cafe Sliperiet</option>
+        </select>
+      </div>
+      <div>
+        <label class="ncf-label">Dato</label>
+        <input type="date" id="ncDato" class="ncf-input" onchange="autoFyllTid()">
+      </div>
+      <div>
+        <label class="ncf-label">Klokkeslett</label>
+        <select id="ncTid" class="ncf-input">
+          <option value="">— Velg —</option>
+          <option>16:00</option><option>16:30</option><option>17:00</option>
+          <option>17:30</option><option>18:00</option><option>18:30</option>
+          <option>19:00</option><option>19:30</option><option>20:00</option>
+        </select>
+      </div>
+      <div>
+        <label class="ncf-label">Konsertansvarlig</label>
+        <select id="ncAnsvarlig" class="ncf-input">
+          <option value="">— Velg —</option>
+        </select>
+      </div>
+    </div>
+    <div class="ncf-btns">
+      <button class="btn-opprett" onclick="opprettKonsert()">+ Opprett konsert</button>
+      <span id="ncfStatusMsg" style="font-size:0.82rem;color:var(--gold);align-self:center;"></span>
+    </div>
+  </div>
+
+  <!-- Print header -->
+  <div id="printInfo">
+    <div style="display:flex;gap:2rem;align-items:baseline;border-bottom:2px solid #1a1a2e;padding-bottom:0.5rem;margin-bottom:1rem;">
+      <span id="printDato"></span>
+      <span id="printTid" style="font-size:1rem;color:#555;"></span>
+      <span id="printLokasjon" style="margin-left:auto;"></span>
+    </div>
+  </div>
+
+  <!-- Meta bar -->
+  <div class="meta-bar" id="metaBar">
+    <div><label>Dato</label><div class="meta-val" id="metaDato">—</div></div>
+    <div><label>Klokkeslett</label><div class="meta-val" id="metaTid">—</div></div>
+    <div><label>Lokasjon</label><div class="meta-val" id="metaLokasjon">—</div></div>
+    <div>
+      <label>Ansvarlig</label>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div class="meta-val" id="metaAnsvarlig">—</div>
+        <button id="btnEndreAnsvarlig" onclick="endreAnsvarlig()" style="display:none;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:5px;padding:2px 8px;font-size:0.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;">✏️ Endre</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add form -->
+  <div class="add-form" id="addForm">
+    <div class="add-form-grid">
+      <div>
+        <label class="f-label">Elev <button type="button" onclick="visElevregister()" title="Velg fra elevregister" style="background:var(--gold);color:#fff;border:none;border-radius:5px;padding:1px 7px;cursor:pointer;font-size:0.75rem;margin-left:0.4rem;vertical-align:middle;">&#127891; Register</button></label>
+        <input class="f-input" type="text" id="inpElev" placeholder="NAVN" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div>
+        <label class="f-label">Instrument</label>
+        <select class="f-input" id="inpInstrument"><option value="">— Velg —</option></select>
+      </div>
+      <div>
+        <label class="f-label">Stykkets navn</label>
+        <input class="f-input" type="text" id="inpStykke" placeholder="TITTEL" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      </div>
+    </div>
+    <div class="add-form-grid2">
+      <div>
+        <label class="f-label">Varighet (min)</label>
+        <input class="f-input" type="text" id="inpVarighet" placeholder="3,5 eller 3:30">
+      </div>
+      <div>
+        <label class="f-label">Akkompagnement</label>
+        <select class="f-input" id="inpAkkomp"><option value="">— Ingen —</option></select>
+      </div>
+      <div>
+        <label class="f-label">Merknader</label>
+        <input class="f-input" type="text" id="inpMerknader" placeholder="Valgfri...">
+      </div>
+      <div>
+        <label class="f-label">Lærer</label>
+        <select class="f-input" id="inpLærer"><option value="">— Velg instrument —</option></select>
+      </div>
+    </div>
+    <div class="add-form-btns">
+      <button class="btn-add" onclick="leggTil()">+ Legg til</button>
+      <button class="btn-print" onclick="window.print()">🖨 Skriv ut</button>
+    </div>
+  </div>
+
+  <!-- Flytt-bar (vises når innslag er valgt) -->
+  <div class="flytt-bar" id="flyttBar">
+    <span id="flyttAntall">0 valgt</span>
+    <button class="flytt-knapp" onclick="visFlyttModal()">➜ Flytt til konsert</button>
+    <button class="avbryt-flytt" onclick="avbrytFlytt()">✕ Avbryt</button>
+  </div>
+
+  <!-- Flytt-modal -->
+  <div class="modal-overlay" id="flyttModal">
+    <div class="modal-box">
+      <h3>Flytt til konsert</h3>
+      <p id="flyttModalTekst"></p>
+      <div class="modal-konsert-list" id="flyttModalListe"></div>
+      <button class="modal-avbryt" onclick="skjulFlyttModal()">Avbryt</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap" id="tableWrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="sel-col"><input type="checkbox" id="velgAlleChk" title="Velg alle" onchange="toggleVelgAlle(this.checked)" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;"></th>
+          <th class="num-col">#</th>
+          <th>Elev</th>
+          <th>Instrument</th>
+          <th>Stykke</th>
+          <th>Varighet</th>
+          <th>Akkomp.</th>
+          <th>Merknader</th>
+          <th class="th-lærer-pos" id="thLærer"><div class="th-lærer-wrap">LÆRER<button class="lærer-filter-btn" id="lærerFilterBtn" onclick="toggleLærerFilterPopup(event)" title="Filtrer på lærer">▼</button><button class="lærer-filter-btn" id="lærerFilterReset" onclick="nullstillLærerFilter()" title="Vis alle" style="display:none">✕ Alle</button></div><div class="lærer-filter-popup" id="lærerFilterPopup" style="display:none"></div></th>
+          <th class="har-spilt-col">Har spilt</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="listeBody">
+        <tr><td colspan="11"><div class="empty-state">🎵<p>Ingen innslag lagt til ennå</p></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="stats" id="statsBar">
+    <span>Innslag: <strong id="statTotal">0</strong></span>
+    <span class="no-print">Har spilt: <strong id="statPlayed">0</strong></span>
+    <span class="no-print">Gjenstår: <strong id="statLeft">0</strong></span>
+    <span>Est. varighet: <strong id="statVarighet">—</strong></span>
+  </div>
+
+
+  <!-- ── ELEVREGISTER MODAL ── -->
+  <div class="elev-modal" id="elevModal">
+    <div class="elev-box">
+      <div class="elev-header">
+        <h3>&#127891; Elevregister</h3>
+        <button class="elev-hbtn" onclick="document.getElementById('elevCsvFil').click()">&#128229; Importer CSV</button>
+        <input type="file" id="elevCsvFil" accept=".csv,.html,.htm" style="display:none" onchange="importerElevCSV(event)">
+        <button class="elev-hbtn" onclick="eksporterElevJSON()">&#128190; Lagre JSON</button>
+        <button class="elev-hbtn" onclick="document.getElementById('elevJsonFil').click()">&#128194; Last JSON</button>
+        <input type="file" id="elevJsonFil" accept=".json" style="display:none" onchange="importerElevJSON(event)">
+        <button class="elev-hbtn" onclick="skjulElevregister()">&#10005; Lukk</button>
+      </div>
+
+      <div class="elev-search-row">
+        <input class="elev-search" type="text" id="elevSok" placeholder="Søk etter navn..." oninput="filterElever()">
+        <span class="elev-count" id="elevCount">0 elever</span>
+      </div>
+      <div class="elev-list" id="elevListe">
+        <div class="elev-empty">Ingen elever lastet inn ennå.<br>Importer en CSV-fil fra Speedadmin.</div>
+      </div>
+      <div class="elev-footer">
+        <span class="elev-sel-count" id="elevValgtTekst">Ingen valgt</span>
+        <label class="gruppe-toggle" title="Slå sammen valgte elever til én gruppe">
+          <input type="checkbox" id="elevGruppeCheck"> Gruppe
+        </label>
+        <button class="elev-close-btn" onclick="skjulElevregister()">Avbryt</button>
+        <button class="elev-insert-btn" id="elevInsertBtn" onclick="settInnValgte()" disabled>Sett inn i skjema</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Administrer register modal (redigering, sletting, ingen innsetting) -->
+  <div class="elev-modal" id="adminRegisterModal">
+    <div class="elev-box">
+      <div class="elev-header">
+        <h3>&#127891; Administrer elevregister</h3>
+        <button class="elev-hbtn" onclick="document.getElementById('adminCsvFil').click()">&#128229; Importer CSV</button>
+        <input type="file" id="adminCsvFil" accept=".csv,.html,.htm" style="display:none" onchange="importerAdminCSV(event)">
+        <button class="elev-hbtn" onclick="eksporterElevJSON()">&#128190; Lagre JSON</button>
+        <button class="elev-hbtn" onclick="document.getElementById('adminJsonFil').click()">&#128194; Last JSON</button>
+        <input type="file" id="adminJsonFil" accept=".json" style="display:none" onchange="importerAdminJSON(event)">
+        <button class="elev-hbtn" onclick="skjulAdminRegister()">&#10005; Lukk</button>
+      </div>
+      <div class="elev-dropzone" id="adminDropzone" onclick="document.getElementById('adminCsvFil').click()">
+        <span class="dz-icon">&#128196;</span>
+        <strong>Dra og slipp CSV-filen hit</strong>
+        <p>eller klikk for å velge fil &mdash; eksporter fra Speedadmin</p>
+      </div>
+      <div class="elev-search-row">
+        <input class="elev-search" type="text" id="adminSok" placeholder="Søk etter navn..." oninput="filterAdminRegister()">
+        <span class="elev-count" id="adminCount">0 elever</span>
+      </div>
+      <div class="elev-list" id="adminElevListe">
+        <div class="elev-empty">Ingen elever lastet inn ennå.<br>Importer en CSV-fil fra Speedadmin.</div>
+      </div>
+      <div class="elev-footer">
+        <button class="elev-close-btn" onclick="skjulAdminRegister()">Lukk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Endre ansvarlig modal (admin) -->
+  <div class="modal-overlay" id="ansvarligModal">
+    <div class="modal-box">
+      <h3>Endre konsertansvarlig</h3>
+      <p>Velg ny ansvarlig lærer for denne konserten</p>
+      <select id="ansvarligSel" class="ncf-input" style="width:100%;margin-bottom:1rem;"></select>
+      <div style="display:flex;gap:0.5rem;">
+        <button class="btn-opprett" onclick="lagreAnsvarlig()">✓ Lagre</button>
+        <button class="modal-avbryt" onclick="document.getElementById('ansvarligModal').classList.remove('vis')">Avbryt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mine Elever visningsmodus modal -->
+  <div class="mine-modal" id="mineElevModal">
+    <div class="mine-box">
+      <div class="mine-hdr">
+        <h3 id="mineModalTittel">Mine elever i konserter</h3>
+        <button class="mine-hbtn" onclick="document.getElementById('mineElevModal').classList.remove('vis')">&#10005; Lukk</button>
+      </div>
+      <div class="mine-content" id="mineElevContent">
+        <div class="mine-empty">Ingen innslag funnet.</div>
+      </div>
+    </div>
+  </div>
+
+<!-- Tutorial modal -->
+  <div class="tut-overlay" id="tutOverlay">
+    <div class="tut-box">
+      <div class="tut-header">
+        <h2 id="tutTittel">🎵 Velkommen til Konsertlisten</h2>
+        <button class="tut-close" onclick="skjulTutorial()">✕ Lukk</button>
+      </div>
+      <div class="tut-tabs" id="tutTabs"></div>
+      <div class="tut-body" id="tutBody"></div>
+      <div class="tut-footer">
+        <button class="tut-ok-btn" onclick="skjulTutorial()">Forstått, takk! 👍</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end appPage -->
+
+<script>
+  // ── DATA ─────────────────────────────────────────────────
+  const instrumentListe = ['Sang','Piano','Gitar','Fiolin','Fiolingruppe','Cello','Fløyte','Klarinett','Saxofon','Trompet','Horn','Trombone','Tuba','Fagott','Trekkspill','Skarptromme','Trommesett','Marimba','Klokkespill','Orkester','Band'];
+
+  const lærere = {
+    'Sang':['Eva Therese'],'Piano':['Edin','Jacob','Kalina'],'Trekkspill':['Agnes'],
+    'Gitar':['Bjørnar'],'Band':['Bjørnar'],'Trompet':['Håkan','Tom'],
+    'Fløyte':['Øystein'],'Saxofon':['Barbara'],'Klarinett':['Fredrik'],
+    'Fagott':['Fredrik'],'Horn':['Cecilie'],'Fiolin':['Tone'],
+    'Fiolingruppe':['Tone'],'Orkester':['Tone'],'Trombone':['Magne'],
+    'Tuba':['Magne','Gustav'],'Skarptromme':['Roger'],'Trommesett':['Roger'],
+    'Marimba':['Roger'],'Klokkespill':['Roger'],'Cello':['Nadezhda'],
+  };
+
+  const lærerInstrumenter = {
+    'Eva Therese':['Sang'],'Edin':['Piano'],'Jacob':['Piano'],'Kalina':['Piano'],
+    'Agnes':['Trekkspill'],'Bjørnar':['Gitar','Band'],'Håkan':['Trompet'],
+    'Tom':['Trompet'],'Øystein':['Fløyte'],'Barbara':['Saxofon'],
+    'Fredrik':['Klarinett','Fagott'],'Cecilie':['Horn'],
+    'Tone':['Fiolin','Fiolingruppe','Orkester'],'Magne':['Trombone','Tuba'],
+    'Gustav':['Tuba'],'Roger':['Skarptromme','Trommesett','Marimba','Klokkespill'],
+    'Nadezhda':['Cello'],
+  };
+
+  const dager = ['SØNDAG','MANDAG','TIRSDAG','ONSDAG','TORSDAG','FREDAG','LØRDAG'];
+
+  // ── STATE ────────────────────────────────────────────────
+  let påloggetBruker = null;
+  let konserter = [];
+  let aktivKonsertId = null;
+  let editIdx = -1;
+  let valgte = new Set(); // indices of selected rows
+  let lærerFilter = null;   // null = vis alle, string = vis kun denne læreren
+
+  // ── STORAGE ──────────────────────────────────────────────
+
+  function visSyncIndikator() {
+    const el = document.getElementById('fbStatus');
+    if (!el) return;
+    el.classList.add('syncing');
+    el.innerHTML = '<span class="fb-dot"></span> Synkroniserer...';
+    el.style.opacity = '1';
+    setTimeout(() => {
+      el.classList.remove('syncing');
+      el.innerHTML = '<span class="fb-dot"></span> Tilkoblet';
+      setTimeout(() => { el.style.opacity = '0'; }, 2000);
+      setTimeout(() => { el.style.opacity = '1'; el.style.display = 'flex'; }, 100);
+    }, 800);
+  }
+
+  let _fbLytter = null;
+
+  function lagreLokal() {
+    try { localStorage.setItem('konsertliste_v2', JSON.stringify(konserter)); } catch(e) {}
+    if (!window._firebaseReady) return;
+    try { window._db.ref('konserter').set(JSON.parse(JSON.stringify(konserter))); } catch(e) {}
+  }
+
+  function lastLokal() {
+    try { const d = localStorage.getItem('konsertliste_v2'); if (d) konserter = JSON.parse(d); } catch(e) {}
+  }
+
+  function startFirebaseSync() {
+    if (!window._firebaseReady) return;
+    if (_fbLytter) { try { _fbLytter.off(); } catch(e) {} }
+    const ref = window._db.ref('konserter');
+    _fbLytter = ref;
+    ref.on('value', snapshot => {
+      const data = snapshot.val();
+      if (data) {
+        konserter = Array.isArray(data) ? data : Object.values(data);
+        // Ensure every concert has an innslag array
+        konserter.forEach(k => { if (!k.innslag) k.innslag = []; });
+        if (aktivKonsertId && !konserter.find(k => k.id === aktivKonsertId)) {
+          aktivKonsertId = null; skjulKonsertvisning();
+        }
+        try { localStorage.setItem('konsertliste_v2', JSON.stringify(konserter)); } catch(e) {}
+      } else if (konserter.length > 0) {
+        // Firebase tom men vi har lokal data — last opp
+        window._db.ref('konserter').set(JSON.parse(JSON.stringify(konserter)));
+        return;
+      }
+      renderTabs();
+      if (aktivKonsertId) render();
+    });
+  }
+  function eksporterJSON() {
+    const blob = new Blob([JSON.stringify(konserter, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `konsertliste_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+  }
+  function importerJSON(event) {
+    const fil = event.target.files[0]; if (!fil) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        konserter = JSON.parse(e.target.result);
+        lagreLokal(); aktivKonsertId = null;
+        renderTabs(); skjulKonsertvisning();
+        alert('Data lastet inn!');
+      } catch { alert('Ugyldig JSON-fil.'); }
+    };
+    reader.readAsText(fil);
+    event.target.value = '';
+  }
+
+  // ── LOGIN ────────────────────────────────────────────────
+  function byggLoginListe() {
+    document.getElementById('loginNames').innerHTML =
+      Object.keys(lærerInstrumenter).map(navn =>
+        `<button class="login-name-btn" onclick="loggInn('${navn}')">
+          ${navn}<span class="inst-badge">${lærerInstrumenter[navn].join(', ')}</span>
+        </button>`
+      ).join('');
+  }
+
+  function loggInn(navn) {
+    påloggetBruker = navn;
+    aktivKonsertId = null;
+    document.getElementById('loginPage').classList.add('skjult');
+    document.getElementById('appPage').classList.add('vis');
+    document.getElementById('userBarName').textContent = navn === '__admin__' ? 'Admin' : navn;
+    if (navn === '__admin__') {
+      document.getElementById('adminTools').classList.add('vis');
+      document.getElementById('mineEleverBar').classList.remove('vis');
+      document.getElementById('faneTittel').textContent = 'Konserter — Admin';
+      visNyKonsertForm();
+    } else {
+      document.getElementById('mineEleverBar').classList.add('vis');
+      document.getElementById('faneTittel').textContent = 'Velg konsert';
+    }
+    lastElevLokal();
+    renderTabs();
+    skjulKonsertvisning();
+    oppdaterInstrumentDropdown();
+  }
+
+  function loggUt() {
+    påloggetBruker = null; aktivKonsertId = null; editIdx = -1;
+    document.getElementById('loginPage').classList.remove('skjult');
+    document.getElementById('appPage').classList.remove('vis');
+    document.getElementById('adminTools').classList.remove('vis');
+    document.getElementById('mineEleverBar').classList.remove('vis');
+    document.getElementById('mineElevSokRes').classList.remove('vis');
+    document.getElementById('mineElevModal').classList.remove('vis');
+    skjulNyKonsertForm();
+  }
+
+  // ── CONCERTS ─────────────────────────────────────────────
+  function formatTab(k) {
+    const d = new Date(k.dato + 'T00:00:00');
+    return `${k.lokasjon}  ${dager[d.getDay()]} ${d.getDate()}/${d.getMonth()+1} ${d.getFullYear()}  kl. ${k.tid}`;
+  }
+
+  function formatDato(k) {
+    const d = new Date(k.dato + 'T00:00:00');
+    return `${dager[d.getDay()]} ${d.getDate()}/${d.getMonth()+1} ${d.getFullYear()}`;
+  }
+
+  const lokasjonRekkefølge = ['Orkestersalen','Pressverksalen','Kreativ sal','Bandrom','Cafe Sliperiet'];
+
+
+
+  function tabVarighet(k) {
+    let sek = 0;
+    k.innslag.forEach(item => { sek += varighetTilSek(item.varighet); });
+    return sek / 60; // minutes
+  }
+
+  function tabHeatStyle(min) {
+    // 0-20 min: normal, 20-40 min: gradient normal→red, 40+ min: full red
+    if (min <= 0) return '';
+    const t = Math.min(Math.max((min - 20) / 20, 0), 1); // 0 at 20min, 1 at 40min
+    if (t <= 0) return '';
+    // Hue: 25 (warm orange) → 0 (pure red)
+    const hue = Math.round(25 * (1 - t));
+    const sat = 100;
+    const lit = Math.round(50 - 10 * t);   // 50% → 40% (bright → vivid)
+    const bgAlpha = (0.06 + t * 0.18).toFixed(2); // subtle tint → stronger
+    const col = `hsl(${hue},${sat}%,${lit}%)`;
+    const bg  = `hsla(${hue},${sat}%,${lit}%,${bgAlpha})`;
+    return `border-color:${col};color:${col};background:${bg};`;
+  }
+
+  function lagTabTooltip(k) {
+    if (!k || !k.innslag) return 'Konserten har ingen innslag';
+    const ant = k.innslag.length;
+    if (ant === 0) return 'Konserten har ingen innslag';
+    let totalSek = 0;
+    k.innslag.forEach(item => { totalSek += varighetTilSek(item.varighet); });
+    const totMin = Math.round(totalSek / 60 * 2) / 2;
+    const varTekst = totalSek > 0 ? totMin + ' min' : 'ukjent varighet';
+    const linje1 = ant + ' innslag  ·  Est. ' + varTekst;
+    if (totalSek > 0 && totMin >= 30) {
+      return linje1 + '<br><span style="color:#f97070;font-weight:600;">⚠️ Konsert full...<br>Vurder å flytte elever til annen konsert om mulig</span>';
+    }
+    return linje1;
+  }
+
+  function renderTabs() {
+    const isAdmin = påloggetBruker === '__admin__';
+    const grid = document.getElementById('lokasjonGrid');
+
+    let html = lokasjonRekkefølge.map(lok => {
+      const konsertHer = konserter
+        .filter(k => k.lokasjon === lok)
+        .sort((a,b) => a.dato.localeCompare(b.dato) || a.tid.localeCompare(b.tid));
+
+      const tabs = konsertHer.map(k => {
+        const aktiv = k.id === aktivKonsertId ? ' active' : '';
+        const erAnsvarlig = (!isAdmin && påloggetBruker && k.ansvarlig === påloggetBruker) ? ' ansvarlig-tab' : '';
+        const d = new Date(k.dato + 'T00:00:00');
+        const label = `${dager[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}  kl. ${k.tid}`;
+        const tooltip = `<span class="tab-tooltip">${lagTabTooltip(k)}</span>`;
+        const heatMin = tabVarighet(k);
+        const heatStyle = (!aktiv && !erAnsvarlig) ? tabHeatStyle(heatMin) : '';
+        const styleAttr = heatStyle ? ` style="${heatStyle}"` : '';
+        if (isAdmin) {
+          return `<span class="tab-wrap"><span class="tab-group">` +
+            `<button class="concert-tab${aktiv}${erAnsvarlig}"${styleAttr} onclick="velgKonsert('${k.id}')">${label}</button>` +
+            `<button class="tab-slett-btn" onclick="slettKonsert('${k.id}')" title="Slett">✕</button>` +
+            `</span>${tooltip}</span>`;
+        }
+        return `<span class="tab-wrap"><button class="concert-tab${aktiv}${erAnsvarlig}"${styleAttr} onclick="velgKonsert('${k.id}')">${label}</button>${tooltip}</span>`;
+      }).join('');
+
+      if (!isAdmin && konsertHer.length === 0) return '';
+
+      const ingenTekst = konsertHer.length === 0
+        ? `<span class="ingen-tabs">Ingen konserter</span>` : '';
+
+      return `<div class="lokasjon-rad">
+        <div class="lokasjon-label">${lok}</div>
+        <div class="lokasjon-tabs">${tabs}${ingenTekst}</div>
+      </div>`;
+    }).join('');
+
+    grid.innerHTML = html;
+  }
+
+  function visNyKonsertForm() {
+    const sel = document.getElementById('ncAnsvarlig');
+    sel.innerHTML = `<option value="">— Velg —</option>` +
+      Object.keys(lærerInstrumenter).map(n => `<option>${n}</option>`).join('');
+    document.getElementById('newConcertForm').classList.add('vis');
+  }
+  function skjulNyKonsertForm() {
+    document.getElementById('newConcertForm').classList.remove('vis');
+  }
+
+  function autoFyllTid() {
+    const lok = document.getElementById('ncLokasjon').value;
+    const dato = document.getElementById('ncDato').value;
+    if (!lok || !dato) return;
+    // Find latest concert at this location on this date
+    const samsted = konserter.filter(k => k.lokasjon === lok && k.dato === dato);
+    if (samsted.length === 0) return;
+    samsted.sort((a,b) => b.tid.localeCompare(a.tid));
+    const sisteTid = samsted[0].tid; // e.g. "16:00"
+    const [h, m] = sisteTid.split(':').map(Number);
+    const nesteTid = String(h + 1).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+    const tidSel = document.getElementById('ncTid');
+    for (let i = 0; i < tidSel.options.length; i++) {
+      if (tidSel.options[i].value === nesteTid || tidSel.options[i].text === nesteTid) {
+        tidSel.selectedIndex = i; break;
+      }
+    }
+  }
+
+  function opprettKonsert() {
+    const dato      = document.getElementById('ncDato').value;
+    const tid       = document.getElementById('ncTid').value;
+    const lokasjon  = document.getElementById('ncLokasjon').value;
+    const ansvarlig = document.getElementById('ncAnsvarlig').value;
+    const msg       = document.getElementById('ncfStatusMsg');
+    if (!dato || !tid || !lokasjon) { alert('Fyll ut lokasjon, dato og tid.'); return; }
+    // Duplikat-sjekk
+    const duplikat = konserter.find(k => k.lokasjon === lokasjon && k.dato === dato && k.tid === tid);
+    if (duplikat) {
+      msg.textContent = '⚠️ Denne kombinasjonen finnes allerede!';
+      msg.style.color = 'var(--rust)';
+      setTimeout(() => { msg.textContent = ''; }, 3000);
+      return;
+    }
+    const id = 'k_' + Date.now();
+    konserter.push({ id, dato, tid, lokasjon, ansvarlig, innslag: [] });
+    lagreLokal();
+    msg.textContent = '✓ Konsert opprettet!';
+    msg.style.color = 'var(--played)';
+    setTimeout(() => { msg.textContent = ''; }, 2500);
+    // Behold lokasjon - avansér dato/tid smart
+    document.getElementById('ncAnsvarlig').selectedIndex = 0;
+    const tidSel2 = document.getElementById('ncTid');
+    const datoInp = document.getElementById('ncDato');
+    const antallSamme = konserter.filter(k => k.lokasjon === lokasjon && k.dato === dato).length;
+    if (antallSamme >= 3) {
+      // Gå til neste hverdag (man-tor)
+      const d = new Date(dato + 'T00:00:00');
+      do { d.setDate(d.getDate() + 1); } while (d.getDay() === 0 || d.getDay() === 5 || d.getDay() === 6);
+      // Bruk lokal dato (unngå UTC-forskyvning)
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      datoInp.value = `${yyyy}-${mm}-${dd}`;
+      for (let i = 0; i < tidSel2.options.length; i++) {
+        if (tidSel2.options[i].text === '16:00') { tidSel2.selectedIndex = i; break; }
+      }
+    } else {
+      // Avansér én time
+      const [h2, m2] = tid.split(':').map(Number);
+      const nesteTid2 = String(h2 + 1).padStart(2,'0') + ':' + String(m2).padStart(2,'0');
+      let funnet = false;
+      for (let i = 0; i < tidSel2.options.length; i++) {
+        if (tidSel2.options[i].text === nesteTid2) { tidSel2.selectedIndex = i; funnet = true; break; }
+      }
+      if (!funnet) tidSel2.selectedIndex = 0;
+    }
+    renderTabs();
+    velgKonsert(id);
+  }
+
+  function slettKonsert(id) {
+    const k = konserter.find(k => k.id === id);
+    if (!confirm(`Slette "${formatTab(k)}"?`)) return;
+    konserter = konserter.filter(k => k.id !== id);
+    lagreLokal();
+    if (aktivKonsertId === id) { aktivKonsertId = null; skjulKonsertvisning(); }
+    renderTabs();
+  }
+
+  function slettAlleKonserter() {
+    if (!confirm('Slette ALLE konserter? Dette kan ikke angres.')) return;
+    konserter = [];
+    lagreLokal();
+    aktivKonsertId = null;
+    skjulKonsertvisning();
+    renderTabs();
+  }
+
+  function velgKonsert(id) {
+    aktivKonsertId = id; editIdx = -1; valgte.clear(); lærerFilter = null;
+    oppdaterFlyttBar();
+    const frBtn = document.getElementById('lærerFilterBtn');
+    const frReset = document.getElementById('lærerFilterReset');
+    if (frBtn) { frBtn.classList.remove('aktiv'); frBtn.textContent = '▼'; }
+    if (frReset) frReset.style.display = 'none';
+    renderTabs(); visKonsertvisning();
+  }
+
+  function aktivKonsert() { return konserter.find(k => k.id === aktivKonsertId) || null; }
+
+  function visKonsertvisning() {
+    const k = aktivKonsert(); if (!k) return;
+    const isAdmin = påloggetBruker === '__admin__';
+    document.getElementById('metaDato').textContent = formatDato(k);
+    document.getElementById('metaTid').textContent = `kl. ${k.tid}`;
+    document.getElementById('metaLokasjon').textContent = k.lokasjon;
+    document.getElementById('metaAnsvarlig').textContent = k.ansvarlig || '—';
+    document.getElementById('printDato').textContent = formatDato(k);
+    document.getElementById('printTid').textContent = `kl. ${k.tid}`;
+    document.getElementById('printLokasjon').textContent = k.lokasjon;
+    document.getElementById('metaBar').classList.add('vis');
+    // Admin ser ikke innleggingsskjema
+    if (isAdmin) {
+      document.getElementById('addForm').classList.remove('vis');
+    } else {
+      document.getElementById('addForm').classList.add('vis');
+    }
+    document.getElementById('tableWrap').classList.add('vis');
+    const endrBtn = document.getElementById('btnEndreAnsvarlig');
+    if (endrBtn) endrBtn.style.display = isAdmin ? 'inline-block' : 'none';
+    oppdaterInstrumentDropdown();
+    render();
+  }
+
+  function skjulKonsertvisning() {
+    document.getElementById('metaBar').classList.remove('vis');
+    document.getElementById('addForm').classList.remove('vis');
+    document.getElementById('tableWrap').classList.remove('vis');
+    document.getElementById('statsBar').classList.remove('vis');
+  }
+
+  // ── DROPDOWNS ────────────────────────────────────────────
+  function oppdaterInstrumentDropdown() {
+    const instSel = document.getElementById('inpInstrument');
+    const lærSel  = document.getElementById('inpLærer');
+    // Populate akkompagnement dropdown
+    const akkompSel = document.getElementById('inpAkkomp');
+    if (akkompSel) {
+      const akkListe = ['— Ingen —','CD/Media'].concat(Object.keys(lærerInstrumenter));
+      akkompSel.innerHTML = akkListe.map(a => '<option>' + a + '</option>').join('');
+    }
+    const liste = (påloggetBruker && påloggetBruker !== '__admin__')
+      ? (lærerInstrumenter[påloggetBruker] || instrumentListe) : instrumentListe;
+    instSel.innerHTML = `<option value="">— Velg —</option>` + liste.map(i => `<option>${i}</option>`).join('');
+    if (liste.length === 1) { instSel.value = liste[0]; oppdaterLærerDropdown(instSel, lærSel); }
+    else lærSel.innerHTML = `<option value="">— Velg instrument —</option>`;
+  }
+
+  function oppdaterLærerDropdown(instSel, lærSel) {
+    const alle = lærere[instSel.value] || [];
+    const filtrert = (påloggetBruker && påloggetBruker !== '__admin__')
+      ? alle.filter(l => l === påloggetBruker) : alle;
+    lærSel.innerHTML = filtrert.length
+      ? filtrert.map(l => `<option>${l}</option>`).join('')
+      : `<option value="">— Ingen lærer —</option>`;
+  }
+
+  document.getElementById('inpInstrument').addEventListener('change', function() {
+    oppdaterLærerDropdown(this, document.getElementById('inpLærer'));
+  });
+
+  // ── VARIGHET ─────────────────────────────────────────────
+  function normaliserVarighet(v) {
+    if (!v) return '';
+    v = v.trim().replace(',', '.');
+    if (/^\d+:\d{1,2}$/.test(v)) {
+      const [min, sek] = v.split(':').map(Number);
+      return `${Math.round((min + sek/60)*2)/2} min`;
+    }
+    const num = parseFloat(v);
+    return isNaN(num) ? v : `${Math.round(num*2)/2} min`;
+  }
+
+  function varighetTilSek(v) {
+    const m = v && v.match(/^([\d.]+)\s*min$/);
+    return m ? parseFloat(m[1])*60 : 0;
+  }
+
+  // ── CRUD ─────────────────────────────────────────────────
+  function kanRedigere(item) {
+    if (!påloggetBruker) return false;
+    if (påloggetBruker === '__admin__') return true;
+    return item.lærer === påloggetBruker;
+  }
+
+  function kanToggleSpilt() {
+    const k = aktivKonsert(); if (!k) return false;
+    if (påloggetBruker === '__admin__') return true;
+    return k.ansvarlig === påloggetBruker;
+  }
+
+  function toggleVelgAlle(checked) {
+    const k = aktivKonsert(); if (!k) return;
+    valgte.clear();
+    if (checked) {
+      k.innslag.forEach((item, idx) => {
+        // Respect lærerFilter — only select visible rows
+        if (kanRedigere(item) && (!lærerFilter || item.lærer === lærerFilter)) {
+          valgte.add(idx);
+        }
+      });
+    }
+    oppdaterFlyttBar();
+    render();
+    const chk = document.getElementById('velgAlleChk');
+    if (chk) chk.checked = checked;
+  }
+
+  function endreAnsvarlig() {
+    const k = aktivKonsert(); if (!k) return;
+    const lærerListe = Object.keys(lærerInstrumenter);
+    const valg = document.getElementById('ansvarligModal');
+    const sel = document.getElementById('ansvarligSel');
+    sel.innerHTML = '<option value="">— Ingen ansvarlig —</option>' +
+      lærerListe.map(n => '<option' + (n === k.ansvarlig ? ' selected' : '') + '>' + n + '</option>').join('');
+    valg.classList.add('vis');
+  }
+
+  function lagreAnsvarlig() {
+    const k = aktivKonsert(); if (!k) return;
+    const ny = document.getElementById('ansvarligSel').value;
+    k.ansvarlig = ny;
+    lagreLokal();
+    document.getElementById('metaAnsvarlig').textContent = ny || '—';
+    document.getElementById('ansvarligModal').classList.remove('vis');
+    renderTabs();
+  }
+
+  function leggTil() {
+    const k = aktivKonsert(); if (!k) return;
+    const elev       = document.getElementById('inpElev').value.trim();
+    const instrument = document.getElementById('inpInstrument').value;
+    const stykke     = document.getElementById('inpStykke').value.trim();
+    const varighet   = normaliserVarighet(document.getElementById('inpVarighet').value);
+    const akkomp     = document.getElementById('inpAkkomp').value.trim();
+    const merknader  = document.getElementById('inpMerknader').value.trim();
+    const lærer      = document.getElementById('inpLærer').value;
+    if (!elev || !instrument || !stykke) { alert('Fyll ut elev, instrument og stykke.'); return; }
+    k.innslag.push({ elev, instrument, stykke, varighet, akkomp, merknader, lærer, spilt: false });
+    lagreLokal();
+    ['inpElev','inpStykke','inpVarighet','inpMerknader'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('inpAkkomp').selectedIndex = 0;
+    oppdaterInstrumentDropdown();
+    document.getElementById('inpElev').focus();
+    render();
+  }
+
+  function toggleSpilt(idx) {
+    const k = aktivKonsert(); if (!k) return;
+    k.innslag[idx].spilt = !k.innslag[idx].spilt;
+    lagreLokal(); render();
+  }
+
+  function slett(idx) {
+    const k = aktivKonsert(); if (!k || !kanRedigere(k.innslag[idx])) return;
+    k.innslag.splice(idx, 1); lagreLokal(); render();
+  }
+
+  function rediger(idx) {
+    const k = aktivKonsert(); if (!k || !kanRedigere(k.innslag[idx])) return;
+    editIdx = idx; render();
+  }
+
+  function avbrytRediger() { editIdx = -1; render(); }
+
+  function oppdaterEditLærer(idx) {
+    oppdaterLærerDropdown(
+      document.getElementById(`editInstrument_${idx}`),
+      document.getElementById(`editLærer_${idx}`)
+    );
+  }
+
+  function lagreRediger(idx) {
+    const k = aktivKonsert(); if (!k) return;
+    const elev       = document.getElementById(`editElev_${idx}`).value.trim();
+    const instrument = document.getElementById(`editInstrument_${idx}`).value;
+    const stykke     = document.getElementById(`editStykke_${idx}`).value.trim();
+    const varighet   = normaliserVarighet(document.getElementById(`editVarighet_${idx}`).value);
+    const akkomp     = document.getElementById(`editAkkomp_${idx}`).value.trim();
+    const merknader  = document.getElementById(`editMerknader_${idx}`).value.trim();
+    const lærer      = document.getElementById(`editLærer_${idx}`).value;
+    if (!elev || !instrument || !stykke) { alert('Fyll ut elev, instrument og stykke.'); return; }
+    k.innslag[idx] = { ...k.innslag[idx], elev, instrument, stykke, varighet, akkomp, merknader, lærer };
+    lagreLokal(); editIdx = -1; render();
+  }
+
+  // ── FLYTT (MOVE) ─────────────────────────────────────────
+  function toggleValgt(idx) {
+    if (valgte.has(idx)) valgte.delete(idx); else valgte.add(idx);
+    oppdaterFlyttBar();
+    // Update just the checkbox visually without full re-render
+    const row = document.querySelector(`tr[data-idx="${idx}"]`);
+    if (row) row.classList.toggle('valgt', valgte.has(idx));
+  }
+
+  function oppdaterFlyttBar() {
+    const bar = document.getElementById('flyttBar');
+    if (valgte.size > 0) {
+      bar.classList.add('vis');
+      document.getElementById('flyttAntall').textContent = `${valgte.size} valgt`;
+    } else {
+      bar.classList.remove('vis');
+    }
+  }
+
+  function avbrytFlytt() {
+    valgte.clear();
+    oppdaterFlyttBar();
+    render();
+  }
+
+  function visFlyttModal() {
+    const k = aktivKonsert(); if (!k) return;
+    const andre = konserter.filter(c => c.id !== aktivKonsertId);
+    if (andre.length === 0) { alert('Ingen andre konserter å flytte til.'); return; }
+    document.getElementById('flyttModalTekst').textContent = `Flytt ${valgte.size} innslag til:`;
+    document.getElementById('flyttModalListe').innerHTML = andre.map(c =>
+      `<button class="modal-konsert-btn" onclick="utforFlytt('${c.id}')">${formatTab(c)}</button>`
+    ).join('');
+    document.getElementById('flyttModal').classList.add('vis');
+  }
+
+  function skjulFlyttModal() {
+    document.getElementById('flyttModal').classList.remove('vis');
+  }
+
+  function utforFlytt(tilId) {
+    const fra = aktivKonsert(); if (!fra) return;
+    const til = konserter.find(c => c.id === tilId); if (!til) return;
+    // Move selected items (in reverse order to keep indices correct)
+    const idxListe = Array.from(valgte).sort((a,b) => b - a);
+    idxListe.forEach(idx => {
+      til.innslag.push(fra.innslag[idx]);
+      fra.innslag.splice(idx, 1);
+    });
+    valgte.clear();
+    lagreLokal();
+    skjulFlyttModal();
+    oppdaterFlyttBar();
+    render();
+  }
+
+
+  // ── LÆRER FILTER ──────────────────────────────────────────
+  function toggleLærerFilterPopup(e) {
+    e.stopPropagation();
+    const popup = document.getElementById('lærerFilterPopup');
+    const isOpen = popup.style.display !== 'none';
+    if (isOpen) { popup.style.display = 'none'; return; }
+    // Build list of lærere present in current concert
+    const k = aktivKonsert(); if (!k) return;
+    const lærereIKonsert = [...new Set(k.innslag.map(i => i.lærer).filter(Boolean))].sort((a,b) => a.localeCompare(b,'no'));
+    popup.innerHTML = lærereIKonsert.map(l =>
+      '<button class="' + (lærerFilter === l ? 'aktiv' : '') + '" onclick="settLærerFilter(&quot;' + l + '&quot;)">' + l + '</button>'
+    ).join('');
+    popup.style.display = 'block';
+    setTimeout(() => document.addEventListener('click', lukketLærerPopup, {once:true}), 0);
+  }
+
+  function lukketLærerPopup() {
+    const popup = document.getElementById('lærerFilterPopup');
+    if (popup) popup.style.display = 'none';
+  }
+
+  function settLærerFilter(lærer) {
+    lærerFilter = lærer;
+    valgte.clear();
+    document.getElementById('lærerFilterPopup').style.display = 'none';
+    document.getElementById('lærerFilterBtn').classList.add('aktiv');
+    document.getElementById('lærerFilterBtn').textContent = lærer.split(' ')[0] + ' ▼';
+    document.getElementById('lærerFilterReset').style.display = '';
+    oppdaterFlyttBar();
+    render();
+  }
+
+  function nullstillLærerFilter() {
+    lærerFilter = null;
+    valgte.clear();
+    document.getElementById('lærerFilterBtn').classList.remove('aktiv');
+    document.getElementById('lærerFilterBtn').textContent = '▼';
+    document.getElementById('lærerFilterReset').style.display = 'none';
+    oppdaterFlyttBar();
+    render();
+  }
+
+  // ── RENDER ───────────────────────────────────────────────
+  function render() {
+    const k = aktivKonsert(); if (!k) return;
+    const alleInnslag = k.innslag;
+    // Apply lærerFilter — filter uses original indices so move still works correctly
+    const innslag = lærerFilter
+      ? alleInnslag.filter(item => item.lærer === lærerFilter)
+      : alleInnslag;
+    // Build index map: filtered index → original index
+    const idxMap = lærerFilter
+      ? alleInnslag.reduce((acc, item, i) => { if (item.lærer === lærerFilter) acc.push(i); return acc; }, [])
+      : alleInnslag.map((_, i) => i);
+
+    const tbody = document.getElementById('listeBody');
+    const statsBar = document.getElementById('statsBar');
+
+    if (alleInnslag.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state">🎵<p>Ingen innslag lagt til ennå</p></div></td></tr>`;
+      statsBar.classList.remove('vis'); return;
+    }
+
+    statsBar.classList.add('vis');
+    const spilt = alleInnslag.filter(i => i.spilt).length;
+    document.getElementById('statTotal').textContent  = alleInnslag.length + (lærerFilter ? ' (' + innslag.length + ' vist)' : '');
+    document.getElementById('statPlayed').textContent = spilt;
+    document.getElementById('statLeft').textContent   = alleInnslag.length - spilt;
+    let totalSek = 0, harVar = false;
+    innslag.forEach(item => { const s = varighetTilSek(item.varighet); if(s>0){totalSek+=s;harVar=true;} });
+    const totMin = Math.round(totalSek/60*2)/2;
+    const statEl = document.getElementById('statVarighet');
+    statEl.textContent = harVar ? totMin + ' min' : '—';
+    statEl.style.color = (harVar && totMin > 30) ? '#c0392b' : '';
+    statEl.style.fontSize = (harVar && totMin > 30) ? '1.1rem' : '';
+    statEl.style.fontWeight = (harVar && totMin > 30) ? '700' : '';
+
+    // Sync velg-alle checkbox
+    const velgAlleChk = document.getElementById('velgAlleChk');
+    if (velgAlleChk) {
+      const synligeIdx = idxMap.filter(i => kanRedigere(alleInnslag[i]));
+      const alleValgt = synligeIdx.length > 0 && synligeIdx.every(i => valgte.has(i));
+      const noenValgt = synligeIdx.some(i => valgte.has(i));
+      velgAlleChk.checked = alleValgt;
+      velgAlleChk.indeterminate = !alleValgt && noenValgt;
+    }
+
+    const editListe = (påloggetBruker && påloggetBruker !== '__admin__')
+      ? (lærerInstrumenter[påloggetBruker] || instrumentListe) : instrumentListe;
+
+    tbody.innerHTML = innslag.map((item, i) => {
+      const idx = idxMap[i]; // original index in k.innslag
+      const kanVelge = kanRedigere(item);
+      const erValgt = valgte.has(idx);
+      const spiltTilgjengelig = kanToggleSpilt();
+      if (idx === editIdx) {
+        const iOpts = editListe.map(i => `<option${i===item.instrument?' selected':''}>${i}</option>`).join('');
+        const lOpts = (lærere[item.instrument]||[]).map(l => `<option${l===item.lærer?' selected':''}>${l}</option>`).join('') || `<option>-- Ingen --</option>`;
+        const akkompListe = ['— Ingen —','CD/Media'].concat(Object.keys(lærerInstrumenter));
+        const akkompOpts = akkompListe.map(a => '<option' + (a===item.akkomp?' selected':'') + '>' + a + '</option>').join('');
+        const spiltCell = spiltTilgjengelig
+          ? `<td class="check-cell har-spilt-col"><input type="checkbox" ${item.spilt?'checked':''} onchange="toggleSpilt(${idx})"></td>`
+          : `<td class="check-cell har-spilt-col">${item.spilt ? '<span style="color:var(--played)">&#10003;</span>' : ''}</td>`;
+        return `<tr class="edit-row" data-idx="${idx}">
+          <td></td>
+          <td>${idx+1}</td>
+          <td><input id="editElev_${idx}" value="${item.elev}" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"></td>
+          <td><select id="editInstrument_${idx}" onchange="oppdaterEditLærer(${idx})">${iOpts}</select></td>
+          <td><input id="editStykke_${idx}" value="${item.stykke}" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"></td>
+          <td><input id="editVarighet_${idx}" value="${item.varighet}" style="width:70px"></td>
+          <td><select id="editAkkomp_${idx}">${akkompOpts}</select></td>
+          <td><input id="editMerknader_${idx}" value="${item.merknader||''}"></td>
+          <td><select id="editLærer_${idx}">${lOpts}</select></td>
+          ${spiltCell}
+          <td style="white-space:nowrap">
+            <button class="save-btn" onclick="lagreRediger(${idx})">&#10003;</button>
+            <button class="cancel-btn" onclick="avbrytRediger()">&#10005;</button>
+          </td>
+        </tr>`;
+      }
+      const selCel = kanVelge ? '<input type="checkbox" ' + (erValgt ? 'checked' : '') + ' onchange="toggleValgt(' + idx + ')">' : '';
+      const btnCel = kanRedigere(item) ? '<button class="del-btn" onclick="slett(' + idx + ')">&#x2715;</button><button class="edit-btn" onclick="rediger(' + idx + ')">&#x270F;&#xFE0F;</button>' : '';
+      const spiltCel = spiltTilgjengelig
+        ? '<input type="checkbox" ' + (item.spilt ? 'checked' : '') + ' onchange="toggleSpilt(' + idx + ')">'
+        : (item.spilt ? '<span style="color:var(--played);font-size:1.1rem">&#10003;</span>' : '');
+      return '<tr class="' + (item.spilt ? 'played' : '') + (erValgt ? ' valgt' : '') + '" data-idx="' + idx + '">' +
+        '<td class="sel-col">' + selCel + '</td>' +
+        '<td class="num-col">' + (idx+1) + '</td>' +
+        '<td>' + item.elev + '</td>' +
+        '<td><span class="instrument-badge' + (item.spilt ? ' played-badge' : '') + '">' + item.instrument + '</span></td>' +
+        '<td>' + item.stykke + '</td>' +
+        '<td class="duration">' + (item.varighet || '—') + '</td>' +
+        '<td style="color:#666;font-size:0.85rem">' + (item.akkomp || '') + '</td>' +
+        '<td style="color:#666;font-size:0.85rem">' + (item.merknader || '') + '</td>' +
+        '<td>' + (item.lærer || '—') + '</td>' +
+        '<td class="check-cell har-spilt-col">' + spiltCel + '</td>' +
+        '<td style="white-space:nowrap">' + btnCel + '</td>' +
+      '</tr>';
+    }).join('');
+
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.activeElement.closest('.add-form')) leggTil();
+  });
+
+
+  // ── ELEVREGISTER ─────────────────────────────────────────
+  let elevregister = [];   // [{navn: 'Ole Hansen'}]
+  let elevValgte = new Set();
+
+  function elevNøkkel() {
+    return 'elevregister_v1_' + (påloggetBruker || '__felles__');
+  }
+  function lagreElevLokal() {
+    try { localStorage.setItem(elevNøkkel(), JSON.stringify(elevregister)); } catch(e) {}
+    if (!window._firebaseReady || !påloggetBruker) return;
+    const key = påloggetBruker.replace(/[.#$\[\]]/g, '_');
+    try { window._db.ref('elevregistre/' + key).set(JSON.parse(JSON.stringify(elevregister))); } catch(e) {}
+  }
+  function lastElevLokal() {
+    try {
+      const d = localStorage.getItem(elevNøkkel());
+      elevregister = d ? JSON.parse(d) : [];
+    } catch(e) { elevregister = []; }
+  }
+  function lastElevFraFirebase() {
+    if (!window._firebaseReady || !påloggetBruker) return;
+    const key = påloggetBruker.replace(/[.#$\[\]]/g, '_');
+    window._db.ref('elevregistre/' + key).once('value').then(snapshot => {
+      const data = snapshot.val();
+      if (data && Array.isArray(data)) {
+        elevregister = data;
+        try { localStorage.setItem(elevNøkkel(), JSON.stringify(elevregister)); } catch(e) {}
+        renderElevListe(); renderAdminRegister();
+      }
+    });
+  }
+
+  function visElevregister() {
+    elevValgte.clear();
+    document.getElementById('elevSok').value = '';
+    renderElevListe();
+    document.getElementById('elevModal').classList.add('vis');
+    document.getElementById('elevSok').focus();
+  }
+  function skjulElevregister() {
+    document.getElementById('elevModal').classList.remove('vis');
+  }
+
+  function oppsettDropzone() {
+    const dz = document.getElementById('elevDropzone');
+    if (dz._dzInit) return;
+    dz._dzInit = true;
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault(); dz.classList.remove('over');
+      const fil = e.dataTransfer.files[0];
+      if (fil) lesElevFil(fil);
+    });
+  }
+
+  function importerElevCSV(event) {
+    const fil = event.target.files[0];
+    if (fil) lesElevFil(fil);
+    event.target.value = '';
+  }
+
+  function lesElevFil(fil) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const content = e.target.result;
+      const navn = trekkUtNavn(content);
+      if (navn.length === 0) {
+        alert('Fant ingen navn i filen. Sjekk at det er riktig fil fra Speedadmin.');
+        return;
+      }
+      // Merge med eksisterende, unngå duplikater
+      const eksisterende = new Set(elevregister.map(e => e.navn));
+      let nye = 0;
+      navn.forEach(n => {
+        if (!eksisterende.has(n)) {
+          elevregister.push({navn: n});
+          nye++;
+        }
+      });
+      elevregister.sort((a,b) => a.navn.localeCompare(b.navn, 'no'));
+      lagreElevLokal();
+      renderElevListe();
+      alert('Importert ' + navn.length + ' elever (' + nye + ' nye).');
+    };
+    reader.readAsText(fil, 'utf-8');
+  }
+
+  function trekkUtNavn(content) {
+    // Decode HTML entities
+    const tmp = document.createElement('textarea');
+    tmp.innerHTML = content;
+    let text = tmp.value;
+    // Strip HTML tags
+    text = text.replace(/<[^>]+>/g, ' ');
+    text = text.replace(/\s+/g, ' ');
+
+    const adresseEndings = [
+      'veien','gata','gate','vei','bakken','toppen','haven','havna',
+      'stien','plassen','lykka','dalen','berg','torget','ravei',
+      'allee','marka','steensgate','hesselbergsvei','kaupangveien',
+      'sollikroken','ratoppen','sandveien','ornveien','borrestadveien',
+      'westleyveien','mollergaten','drengsroa','grevevei','halsegata',
+      'torpelia','hoffsgate','jernbanegata','ulaveien','agnesasen',
+      'kringsjaveien','ornveien','aasen'
+    ];
+
+    const navn = [];
+    // Pattern: Kulturskolen [elevid] [alder] [navn...] [adresse] [4-digit postnr]
+    const blocks = text.match(/Kulturskolen \d+ \d+ .+?(?= \d{4} [A-Z]{2,})/g) || [];
+    blocks.forEach(block => {
+      const parts = block.replace(/^Kulturskolen \d+ \d+ /, '').trim().split(' ');
+      const navnOrd = [];
+      for (const w of parts) {
+        if (/\d/.test(w)) break;
+        const wl = w.toLowerCase();
+        if (adresseEndings.some(s => wl.endsWith(s))) break;
+        if (/^[A-ZÆØÅÆØÅ][a-zæøåéàA-ZÆØÅæøåéà-]+$/.test(w) || /[-]/.test(w)) {
+          navnOrd.push(w);
+        } else {
+          break;
+        }
+      }
+      if (navnOrd.length >= 2) {
+        navn.push(navnOrd.join(' '));
+      }
+    });
+    return [...new Set(navn)].sort((a,b) => a.localeCompare(b,'no'));
+  }
+
+  function filterElever() {
+    renderElevListe();
+  }
+
+  function renderElevListe() {
+    const sok = (document.getElementById('elevSok').value || '').toLowerCase();
+    const liste = document.getElementById('elevListe');
+    const filtrert = elevregister.filter(e =>
+      !sok || e.navn.toLowerCase().includes(sok)
+    );
+    document.getElementById('elevCount').textContent = elevregister.length + ' elever';
+
+    if (elevregister.length === 0) {
+      liste.innerHTML = '<div class="elev-empty">Ingen elever lastet inn ennå.<br>Importer en CSV-fil fra Speedadmin.</div>';
+      oppdaterElevFooter();
+      return;
+    }
+    if (filtrert.length === 0) {
+      liste.innerHTML = '<div class="elev-empty">Ingen treff på &laquo;' + sok + '&raquo;</div>';
+      oppdaterElevFooter();
+      return;
+    }
+
+    liste.innerHTML = filtrert.map((e, i) => {
+      const idx = elevregister.indexOf(e);
+      const sel = elevValgte.has(idx) ? ' selected' : '';
+      const chk = elevValgte.has(idx) ? 'checked' : '';
+      return '<div class="elev-item' + sel + '" onclick="toggleElevValg(' + idx + ')">' +
+        '<input class="elev-check" type="checkbox" ' + chk + ' onclick="event.stopPropagation();toggleElevValg(' + idx + ')">' +
+        '<span class="elev-navn">' + e.navn + '</span>' +
+        '<button class="elev-slett" onclick="event.stopPropagation();slettElev(' + idx + ')" title="Fjern fra register">&#10005;</button>' +
+      '</div>';
+    }).join('');
+
+    oppdaterElevFooter();
+  }
+
+  function toggleElevValg(idx) {
+    if (elevValgte.has(idx)) elevValgte.delete(idx);
+    else elevValgte.add(idx);
+    renderElevListe();
+  }
+
+  function slettElev(idx) {
+    elevregister.splice(idx, 1);
+    elevValgte.clear();
+    lagreElevLokal();
+    renderElevListe();
+  }
+
+  function oppdaterElevFooter() {
+    const n = elevValgte.size;
+    const valgtTekst = document.getElementById('elevValgtTekst');
+    const insertBtn = document.getElementById('elevInsertBtn');
+    if (valgtTekst) valgtTekst.textContent = n === 0 ? 'Ingen valgt' : n + ' valgt';
+    if (insertBtn) insertBtn.disabled = n === 0;
+  }
+
+  function settInnValgte() {
+    const valgteListe = [...elevValgte].map(i => elevregister[i].navn);
+    if (valgteListe.length === 0) return;
+    const gruppeBox = document.getElementById('elevGruppeCheck');
+    const elevFelt = document.getElementById('inpElev');
+    if (elevFelt) {
+      if (gruppeBox && gruppeBox.checked && valgteListe.length > 1) {
+        elevFelt.value = valgteListe.join(' / ').toUpperCase();
+      } else {
+        elevFelt.value = valgteListe[0].toUpperCase();
+      }
+    }
+    skjulElevregister();
+    setTimeout(() => {
+      const inst = document.getElementById('inpInstrument');
+      if (inst) inst.focus();
+    }, 100);
+  }
+
+  function eksporterElevJSON() {
+    if (elevregister.length === 0) { alert('Ingen elever å eksportere.'); return; }
+    const blob = new Blob([JSON.stringify(elevregister, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'elevregister.json';
+    a.click();
+  }
+
+  function importerElevJSON(event) {
+    const fil = event.target.files[0]; if (!fil) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        elevregister = JSON.parse(e.target.result);
+        elevregister.sort((a,b) => a.navn.localeCompare(b.navn,'no'));
+        lagreElevLokal();
+        renderElevListe();
+        alert('Elevregister lastet: ' + elevregister.length + ' elever.');
+      } catch { alert('Ugyldig JSON-fil.'); }
+    };
+    reader.readAsText(fil);
+    event.target.value = '';
+  }
+
+  // ── SØKEFELT: MINE ELEVER I KONSERTER ────────────────────
+  function søkElevKonsert() {
+    const q = (document.getElementById('mineElevSokInput').value || '').toLowerCase().trim();
+    const res = document.getElementById('mineElevSokRes');
+    if (!q || !påloggetBruker || påloggetBruker === '__admin__') {
+      res.classList.remove('vis'); return;
+    }
+    const treff = [];
+    konserter.forEach(k => {
+      k.innslag.forEach(item => {
+        if (item.lærer === påloggetBruker && item.elev.toLowerCase().includes(q)) {
+          treff.push({ item, konsert: k });
+        }
+      });
+    });
+    if (treff.length === 0) {
+      res.innerHTML = '<div class="mes-tom">Ingen treff</div>';
+    } else {
+      res.innerHTML = treff.map(t => {
+        const d = new Date(t.konsert.dato + 'T00:00:00');
+        const dato = dager[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth()+1) + '  kl. ' + t.konsert.tid;
+        return '<div class="mes-item">' +
+          '<div class="mes-navn">' +
+          '<strong>' + t.item.elev + '</strong>' +
+          '<span>' + t.konsert.lokasjon + ' \u2013 ' + dato + '</span>' +
+          '</div>' +
+          '<button class="mes-btn" onclick="g\u00e5TilKonsert(\'' + t.konsert.id + '\')">&#197;pne</button>' +
+          '</div>';
+      }).join('');
+    }
+    res.classList.add('vis');
+  }
+
+  function gåTilKonsert(id) {
+    document.getElementById('mineElevSokRes').classList.remove('vis');
+    document.getElementById('mineElevSokInput').value = '';
+    velgKonsert(id);
+  }
+
+  document.addEventListener('click', function(e) {
+    const bar = document.getElementById('mineEleverBar');
+    if (bar && !bar.contains(e.target)) {
+      const res = document.getElementById('mineElevSokRes');
+      if (res) res.classList.remove('vis');
+    }
+  });
+
+  // ── VISNINGSMODUS: MINE ELEVER ────────────────────────────
+  function visMineElever() {
+    const modal = document.getElementById('mineElevModal');
+    const content = document.getElementById('mineElevContent');
+    const tittel = document.getElementById('mineModalTittel');
+    const bruker = påloggetBruker;
+    if (!bruker) return;
+
+    tittel.textContent = bruker === '__admin__' ? 'Alle elever i konserter' : 'Mine elever – ' + bruker;
+
+    const konsertData = [];
+    konserter.forEach(k => {
+      const mine = k.innslag.filter(item =>
+        bruker === '__admin__' ? true : item.lærer === bruker
+      );
+      if (mine.length > 0) konsertData.push({ k: k, mine: mine });
+    });
+    konsertData.sort(function(a,b){ return a.k.dato.localeCompare(b.k.dato) || a.k.tid.localeCompare(b.k.tid); });
+
+    let totalElever = 0, totalSpilt = 0;
+    konsertData.forEach(function(e){ totalElever += e.mine.length; totalSpilt += e.mine.filter(function(i){return i.spilt;}).length; });
+
+    if (konsertData.length === 0) {
+      content.innerHTML = '<div class="mine-empty">&#127925; Ingen innslag registrert ennå.</div>';
+    } else {
+      var statsHtml = '<div class="mine-stats-bar">' +
+        '<span>Konserter: <strong>' + konsertData.length + '</strong></span>' +
+        '<span>Innslag: <strong>' + totalElever + '</strong></span>' +
+        '<span>Har spilt: <strong>' + totalSpilt + '</strong></span>' +
+        '<span>Gjenstår: <strong>' + (totalElever - totalSpilt) + '</strong></span>' +
+        '</div>';
+
+      var groupsHtml = konsertData.map(function(entry) {
+        var k = entry.k, mine = entry.mine;
+        var d = new Date(k.dato + 'T00:00:00');
+        var dato = dager[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth()+1) + ' ' + d.getFullYear() + '  kl. ' + k.tid;
+        var rows = mine.map(function(item) {
+          var spiltBadge = item.spilt ? '<span class="mine-spilt">&#10003; Spilt</span>' : '';
+          var varBadge = item.varighet ? '<span class="mine-row-var">' + item.varighet + '</span>' : '';
+          return '<div class="mine-row">' +
+            '<div class="mine-row-navn">' + item.elev + '</div>' +
+            '<div class="mine-row-stykke">' + item.stykke + ' <span class="instrument-badge">' + item.instrument + '</span></div>' +
+            varBadge + spiltBadge +
+            '</div>';
+        }).join('');
+        return '<div class="mine-group">' +
+          '<div class="mine-group-hdr">' +
+          '<span class="mine-group-tittel">' + k.lokasjon + ' &mdash; ' + dato + '</span>' +
+          '<button class="mine-apne-btn" onclick="g\u00e5TilKonsertOgLukk(\'' + k.id + '\')">&#197;pne</button>' +
+          '</div>' + rows + '</div>';
+      }).join('');
+
+      content.innerHTML = statsHtml + groupsHtml;
+    }
+    modal.classList.add('vis');
+  }
+
+  function gåTilKonsertOgLukk(id) {
+    document.getElementById('mineElevModal').classList.remove('vis');
+    velgKonsert(id);
+  }
+
+
+  // ── ADMINISTRER REGISTER (redigering + sletting, ingen innsetting) ──────
+  let adminEditIdx = -1;
+
+  function visAdminRegister() {
+    adminEditIdx = -1;
+    document.getElementById('adminSok').value = '';
+    renderAdminRegister();
+    document.getElementById('adminRegisterModal').classList.add('vis');
+    document.getElementById('adminSok').focus();
+    oppsettAdminDropzone();
+  }
+
+  function skjulAdminRegister() {
+    adminEditIdx = -1;
+    document.getElementById('adminRegisterModal').classList.remove('vis');
+  }
+
+  function oppsettAdminDropzone() {
+    const dz = document.getElementById('adminDropzone');
+    if (dz._dzInit) return;
+    dz._dzInit = true;
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault(); dz.classList.remove('over');
+      const fil = e.dataTransfer.files[0];
+      if (fil) lesAdminFil(fil);
+    });
+  }
+
+  function importerAdminCSV(event) {
+    const fil = event.target.files[0];
+    if (fil) lesAdminFil(fil);
+    event.target.value = '';
+  }
+
+  function lesAdminFil(fil) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const navn = trekkUtNavn(e.target.result);
+      if (navn.length === 0) { alert('Fant ingen navn. Sjekk at det er riktig fil fra Speedadmin.'); return; }
+      const eksisterende = new Set(elevregister.map(e => e.navn));
+      let nye = 0;
+      navn.forEach(n => { if (!eksisterende.has(n)) { elevregister.push({navn: n}); nye++; } });
+      elevregister.sort((a,b) => a.navn.localeCompare(b.navn, 'no'));
+      lagreElevLokal();
+      renderAdminRegister();
+      alert('Importert ' + navn.length + ' elever (' + nye + ' nye).');
+    };
+    reader.readAsText(fil, 'utf-8');
+  }
+
+  function importerAdminJSON(event) {
+    const fil = event.target.files[0]; if (!fil) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        const eksisterende = new Set(elevregister.map(e => e.navn));
+        let nye = 0;
+        data.forEach(item => {
+          const n = item.navn || item;
+          if (typeof n === 'string' && !eksisterende.has(n)) { elevregister.push({navn: n}); nye++; }
+        });
+        elevregister.sort((a,b) => a.navn.localeCompare(b.navn,'no'));
+        lagreElevLokal();
+        renderAdminRegister();
+        alert('Lastet inn ' + data.length + ' elever (' + nye + ' nye).');
+      } catch { alert('Ugyldig JSON-fil.'); }
+    };
+    reader.readAsText(fil);
+    event.target.value = '';
+  }
+
+  function filterAdminRegister() { renderAdminRegister(); }
+
+  function renderAdminRegister() {
+    const sok = (document.getElementById('adminSok').value || '').toLowerCase();
+    const liste = document.getElementById('adminElevListe');
+    const filtrert = elevregister.filter(e => !sok || e.navn.toLowerCase().includes(sok));
+    document.getElementById('adminCount').textContent = elevregister.length + ' elever';
+
+    if (elevregister.length === 0) {
+      liste.innerHTML = '<div class="elev-empty">Ingen elever lastet inn ennå.<br>Importer en CSV-fil fra Speedadmin.</div>';
+      return;
+    }
+    if (filtrert.length === 0) {
+      liste.innerHTML = '<div class="elev-empty">Ingen treff</div>';
+      return;
+    }
+
+    liste.innerHTML = filtrert.map(e => {
+      const idx = elevregister.indexOf(e);
+      if (idx === adminEditIdx) {
+        // Redigeringsmodus
+        return '<div class="elev-item" style="gap:0.4rem;">' +
+          '<input type="text" id="adminEditInput" value="' + e.navn.replace(/"/g, '&quot;') + '" ' +
+          'style="flex:1;border:1.5px solid var(--gold);border-radius:5px;padding:0.3rem 0.5rem;font-size:0.9rem;" ' +
+          'onkeydown="if(event.key==\'Enter\')lagreAdminRediger(' + idx + ');if(event.key==\'Escape\')avbrytAdminRediger()">' +
+          '<button onclick="lagreAdminRediger(' + idx + ')" style="background:var(--gold);color:#fff;border:none;border-radius:5px;padding:0.28rem 0.6rem;cursor:pointer;font-size:0.82rem;">✓</button>' +
+          '<button onclick="avbrytAdminRediger()" style="background:none;border:1.5px solid #ccc;border-radius:5px;padding:0.28rem 0.5rem;cursor:pointer;font-size:0.82rem;color:#888;">✕</button>' +
+          '</div>';
+      }
+      return '<div class="elev-item">' +
+        '<span class="elev-navn">' + e.navn + '</span>' +
+        '<button class="elev-edit" onclick="startAdminRediger(' + idx + ')" title="Rediger navn">✏️</button>' +
+        '<button class="elev-slett" onclick="slettAdminElev(' + idx + ')" title="Slett">&#10005;</button>' +
+      '</div>';
+    }).join('');
+
+    // Auto-focus edit input if in edit mode
+    if (adminEditIdx >= 0) {
+      const inp = document.getElementById('adminEditInput');
+      if (inp) { inp.focus(); inp.select(); }
+    }
+  }
+
+  function startAdminRediger(idx) {
+    adminEditIdx = idx;
+    renderAdminRegister();
+  }
+
+  function avbrytAdminRediger() {
+    adminEditIdx = -1;
+    renderAdminRegister();
+  }
+
+  function lagreAdminRediger(idx) {
+    const inp = document.getElementById('adminEditInput');
+    if (!inp) return;
+    const nyttNavn = inp.value.trim();
+    if (!nyttNavn) { alert('Navn kan ikke være tomt.'); return; }
+    elevregister[idx].navn = nyttNavn;
+    elevregister.sort((a,b) => a.navn.localeCompare(b.navn,'no'));
+    lagreElevLokal();
+    adminEditIdx = -1;
+    renderAdminRegister();
+    // Also refresh the regular register list if open
+    if (!document.getElementById('elevModal').classList.contains('vis') === false) {
+      renderElevListe();
+    }
+  }
+
+  function slettAdminElev(idx) {
+    if (!confirm('Slett ' + elevregister[idx].navn + ' fra registeret?')) return;
+    elevregister.splice(idx, 1);
+    lagreElevLokal();
+    adminEditIdx = -1;
+    renderAdminRegister();
+    renderElevListe();
+  }
+
+
+  // ── GENERER KONSERTANSVARLIG ─────────────────────────────
+  function genererKonsertansvarlig() {
+    const aktive = konserter.filter(k => k.innslag.length > 0);
+    if (aktive.length === 0) { alert('Ingen konserter med innslag.'); return; }
+
+    // Count innslag per lærer per konsert
+    const tellingPerKonsert = {};
+    aktive.forEach(k => {
+      tellingPerKonsert[k.id] = {};
+      k.innslag.forEach(item => {
+        if (!item.lærer) return;
+        tellingPerKonsert[k.id][item.lærer] = (tellingPerKonsert[k.id][item.lærer] || 0) + 1;
+      });
+    });
+
+    // Total innslag per lærer across ALL concerts
+    const totalPerLærer = {};
+    aktive.forEach(k => {
+      Object.entries(tellingPerKonsert[k.id]).forEach(([lærer, ant]) => {
+        totalPerLærer[lærer] = (totalPerLærer[lærer] || 0) + ant;
+      });
+    });
+
+    // Group concerts by dato+tid (same slot = same day+time)
+    const slotTildelt = {}; // "dato_tid" -> Set of already-assigned lærere in that slot
+
+    // Sort concerts: fewest unique lærere first (hardest to assign gets priority)
+    const sorterte = [...aktive].sort((a, b) => {
+      const aL = Object.keys(tellingPerKonsert[a.id]).length;
+      const bL = Object.keys(tellingPerKonsert[b.id]).length;
+      return aL - bL;
+    });
+
+    const resultat = {}; // konsertId -> lærer or null
+
+    sorterte.forEach(k => {
+      const telling = tellingPerKonsert[k.id];
+      const slot = k.dato + '_' + k.tid;
+      if (!slotTildelt[slot]) slotTildelt[slot] = new Set();
+      const bruktISlot = slotTildelt[slot];
+
+      // All lærere with innslag here, sorted by count desc
+      const alleMedInnslag = Object.entries(telling)
+        .filter(([, ant]) => ant > 0)
+        .sort((a, b) => b[1] - a[1]);
+
+      if (alleMedInnslag.length === 0) { resultat[k.id] = null; return; }
+
+      // Preference tiers:
+      // Tier 1: not used in slot, >= 3 innslag
+      // Tier 2: not used in slot, 1-2 innslag (fallback)
+      // Tier 3: already used in slot, >= 3 innslag (last resort)
+      // Tier 4: already used in slot, 1-2 innslag (absolute last resort)
+
+      // Picks best candidate from a list (sorted desc by count).
+      // Returns null only if list is empty — never on a tie.
+      function velgFraKandidater(kandidater) {
+        if (kandidater.length === 0) return null;
+        // Sort desc by innslag count on THIS concert
+        const sorted = [...kandidater].sort((a, b) => {
+          if (b[1] !== a[1]) return b[1] - a[1]; // most innslag first
+          // Tiebreak: fewest innslag on OTHER concerts
+          const aAndre = (totalPerLærer[a[0]] || 0) - telling[a[0]];
+          const bAndre = (totalPerLærer[b[0]] || 0) - telling[b[0]];
+          if (aAndre !== bAndre) return aAndre - bAndre; // fewest other first
+          return a[0].localeCompare(b[0], 'no'); // alphabetic final tiebreak
+        });
+        return sorted[0][0];
+      }
+
+      // Build tiers in priority order, each sorted desc by count
+      const tier1 = alleMedInnslag.filter(([l, ant]) => !bruktISlot.has(l) && ant >= 3);
+      const tier2 = alleMedInnslag.filter(([l, ant]) => !bruktISlot.has(l) && ant < 3);
+      const tier3 = alleMedInnslag.filter(([l, ant]) =>  bruktISlot.has(l) && ant >= 3);
+      const tier4 = alleMedInnslag.filter(([l, ant]) =>  bruktISlot.has(l) && ant < 3);
+
+      let valgt = velgFraKandidater(tier1)
+               ?? velgFraKandidater(tier2)
+               ?? velgFraKandidater(tier3)
+               ?? velgFraKandidater(tier4)
+               ?? null;
+
+      resultat[k.id] = valgt;
+      if (valgt) bruktISlot.add(valgt);
+    });
+
+    // Apply and summarise
+    let endret = 0;
+    const oppsummering = [];
+    aktive.forEach(k => {
+      const ny = resultat[k.id] || '';
+      if (k.ansvarlig !== ny) { k.ansvarlig = ny; endret++; }
+      const d = new Date(k.dato + 'T00:00:00');
+      const dagNavn = ['Søn','Man','Tir','Ons','Tor','Fre','Lør'][d.getDay()];
+      oppsummering.push(dagNavn + ' ' + d.getDate() + '/' + (d.getMonth()+1) + ' ' + k.tid + ' – ' + k.lokasjon + ': ' + (ny || '(tomt)'));
+    });
+
+    lagreLokal();
+    // Refresh meta bar if a concert is active
+    const akt = aktivKonsert();
+    if (akt) {
+      document.getElementById('metaAnsvarlig').textContent = akt.ansvarlig || '—';
+    }
+    renderTabs();
+
+    alert('Ferdig! ' + endret + ' konsert(er) oppdatert.\n\n' + oppsummering.join('\n'));
+  }
+
+  // ── TOOLTIP POSITIONING ──────────────────────────────────
+  document.addEventListener('mousemove', e => {
+    const wrap = e.target.closest('.tab-wrap');
+    if (!wrap) return;
+    const tip = wrap.querySelector('.tab-tooltip');
+    if (!tip) return;
+    const tw = tip.offsetWidth || 180;
+    const th = tip.offsetHeight || 36;
+    const margin = 12;
+    let x = e.clientX - tw / 2;
+    let y = e.clientY - th - 12;
+    // If too close to top, show below cursor instead
+    if (y < margin) y = e.clientY + 20;
+    // Keep within horizontal viewport
+    if (x < margin) x = margin;
+    if (x + tw > window.innerWidth - margin) x = window.innerWidth - tw - margin;
+    tip.style.left = x + 'px';
+    tip.style.top  = y + 'px';
+  });
+
+
+  // ── TUTORIAL ─────────────────────────────────────────────
+  const tutorialInnhold = {
+    admin: [
+      {
+        tab: '🗂 Konserter',
+        html: `
+          <div class="tut-section">
+            <h3>🗂 Opprette og administrere konserter</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge gold">+ Ny konsert</span> for å opprette en konsert. Fyll ut dato, tid, lokasjon og konsertansvarlig.</li>
+              <li>Konserter vises som knapper organisert etter lokasjon. Hold musen over en knapp for å se antall innslag og estimert varighet.</li>
+              <li>Knappens farge graderes fra normal → oransje → rød etter hvert som konserten fylles opp (20–40 min).</li>
+              <li>Trykk <span class="tut-badge">✕</span> ved siden av en konsert for å slette den.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>⚡ Generer konsertansvarlig</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge blue">⚡ Generer konsertansvarlig</span> for å automatisk tildele ansvarlig lærer til alle konserter med innslag.</li>
+              <li>Læreren med flest elever på konserten blir ansvarlig. Ved uavgjort velges den med færrest elever på andre konserter.</li>
+              <li>Lærere med 0 innslag tildeles aldri. Lærere med 1–2 innslag kun som siste utvei.</li>
+              <li>Du kan alltid overstyre manuelt ved å klikke ✏️ Endre på konsertens infoline.</li>
+            </ul>
+          </div>`
+      },
+      {
+        tab: '📋 Innslag',
+        html: `
+          <div class="tut-section">
+            <h3>📋 Legge til innslag</h3>
+            <ul>
+              <li>Velg en konsert og fyll ut skjemaet: Elev, Instrument, Stykke, Varighet, Akkompagnement og Merknader.</li>
+              <li>Bruk <span class="tut-badge gold">🎓 Register</span>-knappen ved Elev-feltet for å velge fra elevregisteret.</li>
+              <li>Trykk <span class="tut-badge gold">+ Legg til</span> eller Enter for å legge til innslaget.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>✏️ Redigere og flytte innslag</h3>
+            <ul>
+              <li>Klikk ✏️ på en rad for å redigere. Klikk ✓ for å lagre eller ✕ for å avbryte.</li>
+              <li>Merk av én eller flere elever med avkrysningsboksen til venstre, så dukker flytte-baren opp.</li>
+              <li>Bruk <span class="tut-badge">▼</span>-filteret i Lærer-kolonnen for å vise kun én lærers innslag — velg alle og flytt dem samlet.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>📊 Statistikk</h3>
+            <ul>
+              <li>Under tabellen vises antall innslag, antall spilt og estimert totalvarighet.</li>
+              <li>Totalvarighet blir <span style="color:#c0392b;font-weight:700;">rød</span> når den overstiger 30 minutter.</li>
+            </ul>
+          </div>`
+      },
+      {
+        tab: '🎓 Elevregister',
+        html: `
+          <div class="tut-section">
+            <h3>🎓 Elevregister — velg elever raskt</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge gold">🎓 Elevregister</span> i verktøylinjen eller <span class="tut-badge gold">🎓 Register</span> ved Elev-feltet.</li>
+              <li>Søk etter navn, velg én eller flere elever, og trykk <strong>Sett inn i skjema</strong>.</li>
+              <li>Aktiver <strong>Gruppe</strong> for å sette inn flere elever som én gruppeoppføring.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>🎓 Administrer register</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge blue">🎓 Administrer register</span> i Mine elever-baren for å importere, redigere og slette elever.</li>
+              <li>Dra og slipp CSV-filen fra Speedadmin rett inn i dropzone-feltet — navn hentes automatisk ut.</li>
+              <li>Klikk ✏️ for å redigere et navn, ✕ for å slette. Lagre til JSON for å gjenbruke.</li>
+            </ul>
+          </div>`
+      },
+      {
+        tab: '💾 Data',
+        html: `
+          <div class="tut-section">
+            <h3>💾 Lagre og laste inn data</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge">💾 Lagre JSON</span> for å laste ned en sikkerhetskopi av alle konserter.</li>
+              <li>Trykk <span class="tut-badge">📂 Last inn JSON</span> for å gjenopprette fra en backup-fil.</li>
+              <li>Data lagres også automatisk i nettleseren (localStorage) mellom økter.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>🖨 Utskrift</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge">🖨 Skriv ut</span> for å skrive ut programmet for aktiv konsert.</li>
+              <li>«Har spilt»-kolonnen skjules automatisk ved utskrift.</li>
+            </ul>
+          </div>`
+      }
+    ],
+    lærer: [
+      {
+        tab: '🗂 Oversikt',
+        html: `
+          <div class="tut-section">
+            <h3>🗂 Se konserter</h3>
+            <ul>
+              <li>Konserter er organisert etter lokasjon. Trykk på en konsert for å åpne den.</li>
+              <li>Konserter der du er <span class="tut-badge blue">konsertansvarlig</span> vises med blå kant.</li>
+              <li>Hold musen over en konsert for å se antall innslag og estimert varighet.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>📋 Mine elever</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge blue">📋 Mine elever</span> for å se en oversikt over alle dine elever på tvers av konserter.</li>
+              <li>Bruk søkefeltet for å finne en bestemt elev raskt.</li>
+            </ul>
+          </div>`
+      },
+      {
+        tab: '📋 Innslag',
+        html: `
+          <div class="tut-section">
+            <h3>📋 Legge til dine elever</h3>
+            <ul>
+              <li>Velg en konsert og fyll ut skjemaet: Elev, Instrument, Stykke, Varighet og eventuelle merknader.</li>
+              <li>Bruk <span class="tut-badge gold">🎓 Register</span>-knappen ved Elev-feltet for å velge fra ditt elevregister — mye raskere enn å skrive!</li>
+              <li>Trykk <span class="tut-badge gold">+ Legg til</span> eller Enter for å legge til.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>✏️ Redigere og flytte egne innslag</h3>
+            <ul>
+              <li>Du kan kun redigere og flytte <strong>dine egne elevers innslag</strong>.</li>
+              <li>Merk av med avkrysningsboksen til venstre for å flytte elever til en annen konsert.</li>
+              <li>Merk av <strong>Har spilt</strong> under konserten for å markere at en elev har fremført.</li>
+            </ul>
+          </div>`
+      },
+      {
+        tab: '🎓 Elevregister',
+        html: `
+          <div class="tut-section">
+            <h3>🎓 Bruke elevregisteret</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge gold">🎓 Register</span> ved Elev-feltet for å velge elev fra listen istedet for å skrive.</li>
+              <li>Søk etter navn, klikk på eleven og trykk <strong>Sett inn i skjema</strong>.</li>
+            </ul>
+          </div>
+          <div class="tut-section">
+            <h3>🎓 Administrer ditt register</h3>
+            <ul>
+              <li>Trykk <span class="tut-badge blue">🎓 Administrer register</span> for å importere elever fra Speedadmin.</li>
+              <li>Dra og slipp CSV-filen fra Speedadmin inn i feltet — navn hentes automatisk ut.</li>
+              <li>Du kan redigere navn (✏️) og slette elever (✕) direkte i listen.</li>
+              <li>Lagre til JSON for å ta vare på listen til neste gang.</li>
+            </ul>
+          </div>`
+      }
+    ]
+  };
+
+  let tutAktivTab = 0;
+
+  function visTutorial() {
+    const isAdmin = påloggetBruker === '__admin__';
+    const innhold = isAdmin ? tutorialInnhold.admin : tutorialInnhold.lærer;
+    tutAktivTab = 0;
+    renderTutorial(innhold);
+    document.getElementById('tutOverlay').classList.add('vis');
+  }
+
+  function skjulTutorial() {
+    document.getElementById('tutOverlay').classList.remove('vis');
+  }
+
+  function renderTutorial(innhold) {
+    const tabs = document.getElementById('tutTabs');
+    const body = document.getElementById('tutBody');
+    tabs.innerHTML = innhold.map((seksjon, i) =>
+      '<div class="tut-tab' + (i === tutAktivTab ? ' active' : '') + '" onclick="byttTutTab(' + i + ')">' + seksjon.tab + '</div>'
+    ).join('');
+    body.innerHTML = innhold[tutAktivTab].html;
+  }
+
+  function byttTutTab(i) {
+    const isAdmin = påloggetBruker === '__admin__';
+    const innhold = isAdmin ? tutorialInnhold.admin : tutorialInnhold.lærer;
+    tutAktivTab = i;
+    renderTutorial(innhold);
+  }
+
+  // Close on overlay click
+  // ── INIT ─────────────────────────────────────────────────
+  lastLokal();
+  byggLoginListe();
+  renderTabs();
+  startFirebaseSync();
+</script>
+
+</body>
+</html>
