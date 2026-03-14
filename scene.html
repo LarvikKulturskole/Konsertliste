@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="https://larvikkulturskole.github.io/Konsertliste/icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Scenevisning – Larvik Kulturskole</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c9963b;
+    --gold-light: #e8c97a;
+    --ink: #1a1a2e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0a0a10;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ══════════════════════════════
+     VELKOMSTSIDE
+  ══════════════════════════════ */
+  #velkomstSide {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 2rem 1.5rem;
+    background: radial-gradient(ellipse at 60% 30%, #1a1030 0%, #0a0a10 70%);
+    text-align: center;
+    transition: opacity 0.5s ease;
+  }
+  #velkomstSide.skjult { opacity: 0; pointer-events: none; }
+
+  .velk-logo {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(201,150,59,0.4);
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0 40px rgba(201,150,59,0.2);
+  }
+  .velk-logo-placeholder {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    border: 2px solid rgba(201,150,59,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.5rem; margin-bottom: 1.5rem;
+  }
+  .velk-velkommen {
+    font-size: clamp(0.85rem, 3vw, 1rem);
+    letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--gold); font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  .velk-tittel {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 8vw, 3.5rem);
+    color: #fff; line-height: 1.15;
+    margin-bottom: 0.4rem;
+  }
+  .velk-sted {
+    font-size: clamp(1rem, 3.5vw, 1.3rem);
+    color: var(--gold-light); margin-bottom: 0.3rem;
+  }
+  .velk-dato {
+    font-size: clamp(0.85rem, 2.8vw, 1rem);
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 0.2rem;
+  }
+  .velk-antall {
+    font-size: clamp(0.78rem, 2.5vw, 0.9rem);
+    color: rgba(255,255,255,0.25);
+    margin-bottom: 2.5rem;
+  }
+
+  .velk-konsert-velger {
+    width: 100%; max-width: 400px;
+    margin-bottom: 1.5rem;
+  }
+  .velk-konsert-velger select {
+    width: 100%;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px; color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem; padding: 0.7rem 1rem;
+    cursor: pointer; outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c9963b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+  }
+  .velk-konsert-velger select option { background: #1a1a2e; }
+  .velk-konsert-velger label {
+    display: block; font-size: 0.75rem;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .velk-start-btn {
+    background: var(--gold); color: #fff;
+    border: none; border-radius: 50px;
+    padding: 1rem 3rem; font-size: 1.1rem;
+    font-weight: 700; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; letter-spacing: 0.04em;
+    box-shadow: 0 6px 30px rgba(201,150,59,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .velk-start-btn:active { transform: scale(0.96); box-shadow: 0 2px 12px rgba(201,150,59,0.2); }
+  .velk-start-btn:disabled { opacity: 0.4; pointer-events: none; }
+
+  .velk-laster {
+    font-size: 0.8rem; color: rgba(255,255,255,0.3);
+    margin-top: 1.5rem; min-height: 1.2em;
+  }
+
+  /* ══════════════════════════════
+     SCENEVISNING
+  ══════════════════════════════ */
+  #sceneWrapper {
+    flex: 1; display: flex; flex-direction: column;
+    overflow: hidden; opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  }
+  #sceneWrapper.vis { opacity: 1; pointer-events: all; }
+
+  .sc-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.75rem 1.2rem;
+    background: rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0; position: relative; z-index: 2;
+  }
+  .sc-title {
+    color: rgba(255,255,255,0.4); font-size: 0.78rem;
+    font-family: 'DM Sans',sans-serif; max-width: 60%;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .sc-counter { color: var(--gold); font-size: 0.85rem; font-family: 'DM Sans',sans-serif; font-weight: 700; }
+  .sc-tilbake {
+    background: none; border: none; color: rgba(255,255,255,0.3);
+    font-size: 0.8rem; cursor: pointer; padding: 0.2rem 0.5rem;
+    font-family: 'DM Sans',sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sc-tilbake:active { color: var(--gold); }
+
+  .sc-progress { height: 3px; background: rgba(255,255,255,0.08); flex-shrink: 0; }
+  .sc-progress-fill { height: 100%; background: var(--gold); transition: width 0.4s ease; }
+
+  .sc-body {
+    flex: 1; min-height: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 1.5rem; text-align: center; overflow-y: auto;
+    position: relative; z-index: 1;
+  }
+  canvas#sceneCanvas {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+  }
+
+  .sc-footer {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 1rem 1.2rem;
+    background: rgba(255,255,255,0.04);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0; position: relative; z-index: 2;
+  }
+  .sc-nav {
+    flex: 1; background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12); color: #fff;
+    border-radius: 10px; padding: 1rem 0; font-size: 1rem;
+    cursor: pointer; font-family: 'DM Sans',sans-serif;
+    transition: background 0.15s; min-height: 52px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sc-nav.inaktiv { opacity: 0.2; pointer-events: none; }
+  .sc-nav:not(.inaktiv):active { background: rgba(255,255,255,0.2); }
+
+  /* Scene content */
+  .sc-nr {
+    font-size: 0.78rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(255,255,255,0.25); margin-bottom: 1rem;
+    font-family: 'DM Sans',sans-serif;
+  }
+  .sc-elev {
+    font-size: calc(clamp(2.4rem, 10vw, 5rem) * var(--sc-elev-scale, 1));
+    font-family: 'Playfair Display',serif;
+    color: var(--sc-elev-color, #fff);
+    line-height: 1.1; margin-bottom: 0.6rem;
+  }
+  .sc-instrument {
+    font-size: calc(clamp(1.2rem, 5vw, 1.8rem) * var(--sc-instr-scale, 1));
+    color: var(--sc-instr-color, var(--gold-light));
+    font-family: 'DM Sans',sans-serif; margin-bottom: 0.5rem;
+  }
+  .sc-stykke {
+    font-size: calc(clamp(1.6rem, 7vw, 2.4rem) * var(--sc-stykke-scale, 1));
+    color: var(--sc-stykke-color, rgba(255,255,255,0.7));
+    font-style: italic; margin-bottom: 0.2rem;
+    font-family: 'DM Sans',sans-serif;
+  }
+  .sc-komponist {
+    font-size: calc(clamp(0.9rem, 3vw, 1.1rem) * var(--sc-komp-scale, 1));
+    color: var(--sc-komp-color, rgba(255,255,255,0.35));
+    font-family: 'DM Sans',sans-serif; margin-bottom: 0.4rem;
+  }
+  .sc-laerer-boks {
+    position: absolute; top: 3.5rem; left: 1.2rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+    max-width: 80px;
+  }
+  .sc-laerer-avatar {
+    width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
+    border: 2px solid rgba(201,150,59,0.5);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5); background: #1a1a2e;
+  }
+  .sc-laerer-avatar-init {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: rgba(255,255,255,0.08); border: 2px solid rgba(201,150,59,0.4);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold-light); font-size: 1.3rem; font-weight: 700;
+    font-family: 'DM Sans',sans-serif;
+  }
+  .sc-laerer-kort {
+    font-size: 0.7rem; color: rgba(255,255,255,0.35);
+    font-family: 'DM Sans',sans-serif; text-align: center;
+    letter-spacing: 0.03em;
+  }
+  .sc-akkomp-rad {
+    display: flex; align-items: center; gap: 0.5rem;
+    color: rgba(255,255,255,0.4); font-size: clamp(0.85rem, 2.8vw, 1rem);
+    font-family: 'DM Sans',sans-serif; margin-bottom: 1.8rem; margin-top: 0.2rem;
+  }
+  .sc-akkomp-avatar {
+    width: 28px; height: 28px; border-radius: 50%; object-fit: cover;
+    border: 1.5px solid rgba(201,150,59,0.4);
+  }
+  .sc-akkomp-avatar-init {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(255,255,255,0.08); border: 1.5px solid rgba(201,150,59,0.35);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.5); font-size: 0.75rem; font-weight: 700;
+    font-family: 'DM Sans',sans-serif; flex-shrink: 0;
+  }
+  .sc-ferdig { text-align: center; }
+  .sc-ferdig-ikon { font-size: 3.5rem; margin-bottom: 1rem; }
+  .sc-ferdig-txt {
+    font-size: 2rem; font-family: 'Playfair Display',serif;
+    color: var(--gold-light);
+  }
+  .sc-ferdig-sub {
+    font-size: 0.9rem; color: rgba(255,255,255,0.35);
+    margin-top: 0.5rem; font-family: 'DM Sans',sans-serif;
+  }
+
+  /* Swipe-hint (vises kort ved oppstart av scene) */
+  .swipe-hint {
+    position: absolute; bottom: 5rem; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px; padding: 0.4rem 1rem;
+    font-size: 0.75rem; color: rgba(255,255,255,0.4);
+    font-family: 'DM Sans',sans-serif; pointer-events: none;
+    opacity: 0; transition: opacity 0.4s;
+    white-space: nowrap; z-index: 10;
+  }
+  .swipe-hint.vis { opacity: 1; }
+
+  /* Slide-animasjon */
+  @keyframes slideInRight { from { transform: translateX(60px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes slideInLeft  { from { transform: translateX(-60px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .slide-in-right { animation: slideInRight 0.25s ease; }
+  .slide-in-left  { animation: slideInLeft 0.25s ease; }
+</style>
+</head>
+<body>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBqgP2YDnhAoMbnRELfAE-TqoCz46rj8KU",
+    authDomain: "larvik-kulturskole.firebaseapp.com",
+    databaseURL: "https://larvik-kulturskole-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "larvik-kulturskole",
+    storageBucket: "larvik-kulturskole.firebasestorage.app",
+    appId: "1:286532494707:web:b8bfc7b6047c8a392b9106"
+  };
+  firebase.initializeApp(firebaseConfig);
+  window._db = firebase.database();
+</script>
+
+<!-- ══ VELKOMSTSIDE ══ -->
+<div id="velkomstSide">
+  <div class="velk-logo-placeholder" id="velkLogoWrap">🎵</div>
+  <div class="velk-velkommen">Velkommen til</div>
+  <div class="velk-tittel" id="velkTittel">Larvik Kulturskole</div>
+  <div class="velk-sted" id="velkSted"></div>
+  <div class="velk-dato" id="velkDato"></div>
+  <div class="velk-antall" id="velkAntall"></div>
+
+  <div class="velk-konsert-velger" id="velkVelgerWrap" style="display:none;">
+    <label>Velg konsert</label>
+    <select id="velkKonsertSelect"></select>
+  </div>
+
+  <button class="velk-start-btn" id="velkStartBtn" disabled onclick="startScene()">
+    🎭 Åpne scenevisning
+  </button>
+  <div class="velk-laster" id="velkLaster">Kobler til…</div>
+</div>
+
+<!-- ══ SCENEVISNING ══ -->
+<div id="sceneWrapper">
+  <div class="sc-header">
+    <button class="sc-tilbake" onclick="gåTilbake()" title="Tilbake til forsiden">← Velg konsert</button>
+    <div class="sc-title" id="scTittel"></div>
+    <div class="sc-counter" id="scCounter"></div>
+  </div>
+  <div class="sc-progress"><div class="sc-progress-fill" id="scFill"></div></div>
+
+  <div class="sc-body" id="scBody">
+    <canvas id="sceneCanvas"></canvas>
+    <div id="scContent" style="position:relative;z-index:1;width:100%;"></div>
+  </div>
+  <div class="swipe-hint" id="swipeHint">← Sveip for å bla →</div>
+
+  <div class="sc-footer">
+    <button class="sc-nav" id="scForrige" onclick="scGo(-1)">← Forrige</button>
+    <button class="sc-nav" id="scNeste"   onclick="scGo(1)">Neste →</button>
+  </div>
+</div>
+
+<script>
+  // ══ DATA ══
+  var _konserter    = [];
+  var _aktivKonsert = null;
+  var _kø           = [];    // indeks-array av ikke-spilte innslag
+  var _køPos        = 0;
+  var _sceneDesign  = {
+    bgColor:'#0a0a10', elevSize:100, elevColor:'#ffffff', elevVis:true,
+    instrSize:100, instrColor:'#C9A84C', instrVis:true,
+    stykkeSize:100, stykkeColor:'rgba(255,255,255,0.7)', stykkeVis:true,
+    komponistSize:100, komponistColor:'rgba(255,255,255,0.35)', komponistVis:true,
+    nrVis:true, laererVis:true, akkompVis:true
+  };
+  var _overlays     = {};
+  var _overlayImgs  = {};
+  var _lærerBilder  = {};
+  var _logoImg      = null;
+  var _overlaysLastet = false;
+  var _dataLastet   = false;
+
+  var dager = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
+
+  function escHtml(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function navnTilKey(navn) {
+    return (navn||'').replace(/[æÆ]/g,'ae').replace(/[øØ]/g,'oe').replace(/[åÅ]/g,'aa')
+                     .replace(/[^a-zA-Z0-9_-]/g,'_');
+  }
+  function hentBilde(navn) {
+    if (!navn) return null;
+    return _lærerBilder[navnTilKey(navn)] || null;
+  }
+  function formatDato(k) {
+    const d = new Date(k.dato + 'T00:00:00');
+    return dager[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth()+1) + ' ' + d.getFullYear();
+  }
+
+  // ══ FIREBASE LYTTING ══
+  _db.ref('konserter').on('value', snap => {
+    const raw = snap.val();
+    if (!raw) { _konserter = []; }
+    else if (Array.isArray(raw)) { _konserter = raw.filter(Boolean); }
+    else { _konserter = Object.values(raw).filter(k => k && k.id); }
+    _dataLastet = true;
+    oppdaterVelkomst();
+    // Oppdater live hvis scene er åpen
+    if (_aktivKonsert) {
+      const oppdatert = _konserter.find(k => k.id === _aktivKonsert.id);
+      if (oppdatert) { _aktivKonsert = oppdatert; byggKø(); renderScene(); }
+    }
+  });
+
+  _db.ref('settings/sceneDesign').on('value', snap => {
+    const d = snap.val();
+    if (d) { _sceneDesign = Object.assign(_sceneDesign, d); }
+    appliserDesign();
+    renderScene();
+  });
+
+  _db.ref('diplomOverlays').on('value', snap => {
+    const raw = snap.val() || {};
+    _overlays = raw;
+    _overlaysLastet = false;
+    lastOverlayBilder();
+  });
+
+  _db.ref('profilbilder').once('value', snap => {
+    const data = snap.val() || {};
+    Object.entries(data).forEach(([key, url]) => { if (url) _lærerBilder[key] = url; });
+    renderScene();
+  });
+
+  _db.ref('settings/diplomLogo').on('value', snap => {
+    const d = snap.val();
+    if (d && d.data) {
+      _logoImg = new Image();
+      _logoImg.src = d.data;
+      _logoImg.onload = () => {
+        document.getElementById('velkLogoWrap').innerHTML =
+          '<img class="velk-logo" src="' + d.data + '" alt="Logo">';
+      };
+    }
+  });
+
+  function lastOverlayBilder() {
+    const instr = Object.keys(_overlays);
+    if (instr.length === 0) { _overlaysLastet = true; renderScene(); return; }
+    let igjen = 0;
+    instr.forEach(inst => {
+      const cfg = _overlays[inst];
+      const url = cfg && (cfg.imageUrl || cfg.image || cfg.url);
+      if (url && !_overlayImgs[inst]) {
+        igjen++;
+        const img = new Image();
+        img.onload  = () => { _overlayImgs[inst] = img; if (--igjen === 0) { _overlaysLastet = true; renderScene(); } };
+        img.onerror = () => { if (--igjen === 0) { _overlaysLastet = true; renderScene(); } };
+        img.src = url;
+      }
+    });
+    if (igjen === 0) { _overlaysLastet = true; renderScene(); }
+  }
+
+  // ══ VELKOMSTSIDE ══
+  function oppdaterVelkomst() {
+    const konsertNå = _konserter.filter(k => k.innslag && k.innslag.length > 0);
+    const statusEl  = document.getElementById('velkLaster');
+    const startBtn  = document.getElementById('velkStartBtn');
+
+    if (!_dataLastet) { statusEl.textContent = 'Kobler til…'; return; }
+    if (konsertNå.length === 0) {
+      statusEl.textContent = 'Ingen aktive konserter funnet.';
+      startBtn.disabled = true;
+      return;
+    }
+
+    startBtn.disabled = false;
+    statusEl.textContent = '';
+
+    if (konsertNå.length === 1) {
+      // Én konsert – vis info direkte
+      const k = konsertNå[0];
+      document.getElementById('velkVelgerWrap').style.display = 'none';
+      document.getElementById('velkTittel').textContent = k.lokasjon || 'Larvik Kulturskole';
+      document.getElementById('velkSted').textContent   = k.lokasjon || '';
+      document.getElementById('velkDato').textContent   = formatDato(k) + '  kl. ' + (k.tid || '');
+      const gjenstår = k.innslag.filter(i => !i.spilt).length;
+      document.getElementById('velkAntall').textContent =
+        k.innslag.length + ' innslag' + (gjenstår < k.innslag.length ? ' · ' + gjenstår + ' gjenstår' : '');
+      // Forhåndsvalg
+      window._forhåndsvalgtKonsert = k;
+    } else {
+      // Flere konserter – vis velger
+      document.getElementById('velkTittel').textContent = 'Larvik Kulturskole';
+      document.getElementById('velkSted').textContent   = '';
+      document.getElementById('velkDato').textContent   = '';
+      document.getElementById('velkAntall').textContent = konsertNå.length + ' pågående konserter';
+      const sel = document.getElementById('velkKonsertSelect');
+      sel.innerHTML = konsertNå.map(k =>
+        '<option value="' + k.id + '">' + k.lokasjon + ' · ' + formatDato(k) + ' kl. ' + k.tid + '</option>'
+      ).join('');
+      document.getElementById('velkVelgerWrap').style.display = 'block';
+      sel.onchange = () => {
+        const k = _konserter.find(k => k.id === sel.value);
+        window._forhåndsvalgtKonsert = k || null;
+      };
+      window._forhåndsvalgtKonsert = konsertNå[0];
+    }
+  }
+
+  function startScene() {
+    const k = window._forhåndsvalgtKonsert
+      || (_konserter.find(k => k.innslag && k.innslag.length > 0));
+    if (!k) return;
+    _aktivKonsert = k;
+    byggKø();
+
+    document.getElementById('scTittel').textContent = k.lokasjon + ' · ' + formatDato(k) + ' kl. ' + k.tid;
+    appliserDesign();
+
+    // Overganger
+    const velk = document.getElementById('velkomstSide');
+    velk.classList.add('skjult');
+    setTimeout(() => { velk.style.display = 'none'; }, 500);
+
+    const scWrap = document.getElementById('sceneWrapper');
+    scWrap.classList.add('vis');
+    renderScene();
+    visSwipeHint();
+  }
+
+  function gåTilbake() {
+    _aktivKonsert = null;
+    document.getElementById('sceneWrapper').classList.remove('vis');
+    const velk = document.getElementById('velkomstSide');
+    velk.style.display = 'flex';
+    setTimeout(() => velk.classList.remove('skjult'), 10);
+  }
+
+  // ══ SCENE LOGIKK ══
+  function byggKø() {
+    if (!_aktivKonsert) return;
+    _kø = _aktivKonsert.innslag
+      .map((_, i) => i)
+      .filter(i => !_aktivKonsert.innslag[i].spilt);
+    _køPos = 0;
+  }
+
+  function scGo(retning, animKlasse) {
+    const ny = _køPos + retning;
+    if (ny < 0 || ny >= _kø.length) return;
+    _køPos = ny;
+    renderScene(retning > 0 ? 'slide-in-right' : 'slide-in-left');
+  }
+
+  function appliserDesign() {
+    const el = document.getElementById('sceneWrapper');
+    if (!el) return;
+    const d = _sceneDesign;
+    el.style.background = d.bgColor || '#0a0a10';
+    el.style.setProperty('--sc-elev-color',   d.elevColor    || '#ffffff');
+    el.style.setProperty('--sc-elev-scale',   (d.elevSize    || 100) / 100);
+    el.style.setProperty('--sc-instr-color',  d.instrColor   || '#C9A84C');
+    el.style.setProperty('--sc-instr-scale',  (d.instrSize   || 100) / 100);
+    el.style.setProperty('--sc-stykke-color', d.stykkeColor  || 'rgba(255,255,255,0.7)');
+    el.style.setProperty('--sc-stykke-scale', (d.stykkeSize  || 100) / 100);
+    el.style.setProperty('--sc-komp-color',   d.komponistColor || 'rgba(255,255,255,0.35)');
+    el.style.setProperty('--sc-komp-scale',   (d.komponistSize || 100) / 100);
+  }
+
+  function renderScene(animKlasse) {
+    if (!_aktivKonsert) return;
+    const gjenstår = _kø.length;
+
+    // Oppdater fremgang
+    const totalt = _aktivKonsert.innslag.length;
+    const antSpilt = _aktivKonsert.innslag.filter(i => i.spilt).length;
+    document.getElementById('scCounter').textContent = antSpilt + ' / ' + totalt + ' spilt';
+    document.getElementById('scFill').style.width = (totalt ? Math.round(antSpilt / totalt * 100) : 0) + '%';
+
+    // Nav-knapper
+    document.getElementById('scForrige').classList.toggle('inaktiv', _køPos === 0);
+    document.getElementById('scNeste').classList.toggle('inaktiv', _køPos >= gjenstår - 1);
+
+    const content = document.getElementById('scContent');
+
+    if (gjenstår === 0) {
+      content.innerHTML =
+        '<div class="sc-ferdig">' +
+        '<div class="sc-ferdig-ikon">🎉</div>' +
+        '<div class="sc-ferdig-txt">Konserten er ferdig!</div>' +
+        '<div class="sc-ferdig-sub">Alle innslag gjennomført</div>' +
+        '</div>';
+      tegnOverlay(null);
+      return;
+    }
+
+    const origIdx = _kø[_køPos];
+    const it = _aktivKonsert.innslag[origIdx];
+    if (!it) return;
+
+    const posLabel = (_køPos + 1) + ' av ' + gjenstår + ' gjenstående';
+
+    const stykkelinje =
+      (it.stykke && _sceneDesign.stykkeVis !== false
+        ? '<div class="sc-stykke">' + escHtml(it.stykke) + '</div>' : '') +
+      (it.stykke && it.komponist && _sceneDesign.komponistVis !== false
+        ? '<div class="sc-komponist">' + escHtml(it.komponist) + '</div>' : '');
+
+    // Lærerbilde
+    let lærerHtml = '';
+    if (_sceneDesign.laererVis !== false && it.lærer) {
+      const bilde = hentBilde(it.lærer);
+      const avatar = bilde
+        ? '<img class="sc-laerer-avatar" src="' + bilde + '" alt="' + escHtml(it.lærer) + '">'
+        : '<div class="sc-laerer-avatar-init">' + escHtml(it.lærer.charAt(0)) + '</div>';
+      lærerHtml = '<div class="sc-laerer-boks">' + avatar +
+        '<div class="sc-laerer-kort">' + escHtml(it.lærer) + '</div></div>';
+    }
+
+    // Akkompagnement
+    let akkompHtml = '';
+    if (_sceneDesign.akkompVis !== false && it.akkomp && it.akkomp !== '— Ingen —' && it.akkomp.trim()) {
+      const erCD = it.akkomp === 'CD/Media';
+      let akkAvatar;
+      if (erCD) {
+        akkAvatar = '<span style="font-size:1.3rem;line-height:1;">💿</span>';
+      } else {
+        const ab = hentBilde(it.akkomp);
+        akkAvatar = ab
+          ? '<img class="sc-akkomp-avatar" src="' + ab + '" alt="' + escHtml(it.akkomp) + '">'
+          : '<div class="sc-akkomp-avatar-init">' + escHtml(it.akkomp.charAt(0)) + '</div>';
+      }
+      akkompHtml = '<div class="sc-akkomp-rad">' + akkAvatar +
+        '<span>Akkompagnement: ' + escHtml(it.akkomp) + '</span></div>';
+    }
+
+    const html =
+      lærerHtml +
+      (_sceneDesign.nrVis !== false ? '<div class="sc-nr">' + escHtml(posLabel) + '</div>' : '') +
+      (_sceneDesign.elevVis !== false ? '<div class="sc-elev">' + escHtml(it.elev || '') + '</div>' : '') +
+      (_sceneDesign.instrVis !== false ? '<div class="sc-instrument">' + escHtml(it.instrument || '') + '</div>' : '') +
+      stykkelinje +
+      akkompHtml;
+
+    if (animKlasse) {
+      content.classList.remove('slide-in-right', 'slide-in-left');
+      void content.offsetWidth; // reflow
+      content.classList.add(animKlasse);
+    }
+    content.innerHTML = html;
+    tegnOverlay(it.instrument);
+  }
+
+  // ══ CANVAS OVERLAY ══
+  function erMobil() { return window.innerWidth < 768; }
+
+  function tegnOverlay(instrument) {
+    const canvas = document.getElementById('sceneCanvas');
+    if (!canvas) return;
+    const wrap = canvas.parentElement;
+    const W = wrap ? wrap.offsetWidth : window.innerWidth;
+    const H = wrap ? wrap.offsetHeight : window.innerHeight;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+    if (!instrument) return;
+    const img = _overlayImgs[instrument];
+    if (!img) return;
+    const key = erMobil() ? 'mobile' : 'desktop';
+    const allScene = _overlays[instrument] && _overlays[instrument].scene;
+    const cfg = (allScene && allScene[key]) || allScene || { size:40, x:50, y:50, opacity:15, rotation:0 };
+    const imgW = W * (cfg.size / 100);
+    const imgH = imgW / (img.naturalWidth / img.naturalHeight);
+    ctx.save();
+    ctx.globalAlpha = cfg.opacity / 100;
+    ctx.translate(W * (cfg.x / 100), H * (cfg.y / 100));
+    ctx.rotate((cfg.rotation || 0) * Math.PI / 180);
+    ctx.drawImage(img, -imgW / 2, -imgH / 2, imgW, imgH);
+    ctx.restore();
+  }
+
+  window.addEventListener('resize', () => {
+    if (_aktivKonsert) renderScene();
+  });
+
+  // ══ SVEIP-STØTTE ══
+  (function() {
+    var touchStartX = 0;
+    var touchStartY = 0;
+    var SWIPE_MIN   = 50;  // px horisontalt
+    var SWIPE_MAX_V = 80;  // maks vertikalt avvik
+
+    var el = document.getElementById('sceneWrapper');
+
+    el.addEventListener('touchstart', function(e) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    el.addEventListener('touchend', function(e) {
+      if (!_aktivKonsert) return;
+      var dx = e.changedTouches[0].clientX - touchStartX;
+      var dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+      if (Math.abs(dx) < SWIPE_MIN || dy > SWIPE_MAX_V) return;
+      if (dx < 0) scGo(1,  'slide-in-right'); // sveip venstre → neste
+      else        scGo(-1, 'slide-in-left');  // sveip høyre  → forrige
+    }, { passive: true });
+  })();
+
+  // Tastatur (piltaster)
+  document.addEventListener('keydown', function(e) {
+    if (!_aktivKonsert) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  scGo(1,  'slide-in-right');
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')    scGo(-1, 'slide-in-left');
+  });
+
+  // ══ SWIPE HINT ══
+  function visSwipeHint() {
+    const el = document.getElementById('swipeHint');
+    el.classList.add('vis');
+    setTimeout(() => el.classList.remove('vis'), 3000);
+  }
+</script>
+</body>
+</html>
