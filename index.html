@@ -1711,13 +1711,23 @@
 
   function loggInn(navn) {
     påloggetBruker = navn;
-    try { localStorage.setItem('påloggetBruker', navn); } catch(e) {}
+    // Ikke lagre gjestebruker i localStorage
+    if (navn !== '__gjest__') { try { localStorage.setItem('påloggetBruker', navn); } catch(e) {} }
     aktivKonsertId = null;
     document.getElementById('loginPage').classList.add('skjult');
     document.getElementById('appPage').classList.add('vis');
-    document.getElementById('userBarName').textContent = navn === '__developer__' ? 'Developer' : navn === '__admin__' ? (visningsNavn('__admin__') || 'Admin') : navn;
+    document.getElementById('userBarName').textContent = navn === '__developer__' ? 'Developer' : navn === '__admin__' ? (visningsNavn('__admin__') || 'Admin') : navn === '__gjest__' ? '👁 Gjest' : navn;
     if (navn !== '__admin__') { oppdaterTilgjengeligToggle(); } else { const _tBtn = document.getElementById('tilgjengeligToggle'); if (_tBtn) _tBtn.style.display = 'none'; }
-    if (erAdminEllerDeveloper(navn)) {
+    if (navn === '__gjest__') {
+      document.getElementById('adminTools').classList.remove('vis');
+      document.getElementById('mineEleverBar').classList.remove('vis');
+      document.getElementById('faneTittel').textContent = 'Konserter';
+      // Skjul alt som ikke er lesetilgang
+      const addForm = document.getElementById('addForm');
+      if (addForm) addForm.style.display = 'none';
+      const tilgToggle = document.getElementById('tilgjengeligToggle');
+      if (tilgToggle) tilgToggle.style.display = 'none';
+    } else if (erAdminEllerDeveloper(navn)) {
       document.getElementById('adminTools').classList.add('vis');
       document.getElementById('mineEleverBar').classList.remove('vis');
       document.getElementById('faneTittel').textContent = 'Konserter — Admin';
@@ -3715,10 +3725,8 @@
           try { localStorage.setItem(elevNøkkel(), JSON.stringify(elevregister)); } catch(e) {}
           renderElevListe(); renderAdminRegister();
         }
-      } else if (elevregister.length > 0) {
-        // Firebase tom men har lokale data — last opp
-        lagreElevLokal();
       }
+      // IKKE kall lagreElevLokal() her — det ville trigget .on() på nytt i en uendelig løkke
     });
   }
 
@@ -6556,7 +6564,114 @@ Din personlige lenke (send denne til mobilen din):`;
       });
   }
 
+  // ── ÅPENT TILGANG / GJESTELENKE ────────────────────────────────────────────
+  var _gjesteToken = null;
+  var _åpentTilgangAktiv = false;
+
+  function lastÅpentTilgang() {
+    if (!window._db) return;
+    window._db.ref('settings/åpentTilgang').on('value', snap => {
+      const d = snap.val();
+      _åpentTilgangAktiv = !!(d && d.aktiv);
+      _gjesteToken = (d && d.token) ? d.token : null;
+      const chk = document.getElementById('åpentTilgangChk');
+      const status = document.getElementById('åpentTilgangStatus');
+      const wrap = document.getElementById('åpentTilgangLenkeWrap');
+      if (chk) chk.checked = _åpentTilgangAktiv;
+      if (status) { status.textContent = _åpentTilgangAktiv ? '✅ På' : 'Av'; status.style.color = _åpentTilgangAktiv ? '#2a7f4f' : '#aaa'; }
+      if (wrap) wrap.style.display = _åpentTilgangAktiv ? 'flex' : 'none';
+      if (_åpentTilgangAktiv && _gjesteToken) {
+        const lenke = window.location.origin + window.location.pathname + '?token=' + _gjesteToken;
+        const inp = document.getElementById('åpentTilgangLenke');
+        if (inp) inp.value = lenke;
+      }
+    });
+  }
+
+  function toggleÅpentTilgang(aktiv) {
+    if (!window._db) return;
+    if (aktiv && !_gjesteToken) {
+      _gjesteToken = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    }
+    window._db.ref('settings/åpentTilgang').set({ aktiv: aktiv, token: _gjesteToken || null });
+  }
+
+  function regenererGjesteToken() {
+    if (!window._db) return;
+    _gjesteToken = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    window._db.ref('settings/åpentTilgang').set({ aktiv: true, token: _gjesteToken });
+  }
+
+  function kopierGjesteLenke() {
+    const inp = document.getElementById('åpentTilgangLenke');
+    if (!inp) return;
+    navigator.clipboard.writeText(inp.value).then(() => {
+      const btn = inp.nextElementSibling;
+      if (btn) { const orig = btn.textContent; btn.textContent = '✓ Kopiert!'; setTimeout(() => btn.textContent = orig, 1500); }
+    }).catch(() => { inp.select(); document.execCommand('copy'); });
+  }
+
+  function sjekkGjesteToken() {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (!token) return false;
+    if (!window._db) return false;
+    window._db.ref('settings/åpentTilgang').once('value').then(snap => {
+      const d = snap.val();
+      if (d && d.aktiv && d.token === token) {
+        // Token gyldig — vis lærervelger så de logger inn med riktig identitet
+        visLærerVelgerForGjest();
+      } else {
+        visPåloggingsKnapp();
+      }
+    }).catch(visPåloggingsKnapp);
+    return true;
+  }
+
+  function visLærerVelgerForGjest() {
+    const sjekker = document.getElementById('loginSjekker');
+    if (sjekker) sjekker.style.display = 'none';
+
+    // Bygg lærervelger i login-boksen
+    const loginBox = document.querySelector('.login-box');
+    if (!loginBox) return;
+
+    // Fjern gammel velger om den finnes
+    const gammel = document.getElementById('gjesteVelgerWrap');
+    if (gammel) gammel.remove();
+
+    const lærere = Object.keys(lærerInstrumenter).sort((a,b) => a.localeCompare(b,'no'));
+
+    const wrap = document.createElement('div');
+    wrap.id = 'gjesteVelgerWrap';
+    wrap.style.cssText = 'margin-top:0.5rem;';
+
+    const tittel = document.createElement('p');
+    tittel.style.cssText = 'font-size:0.95rem;font-weight:600;margin-bottom:0.75rem;text-align:center;color:var(--ink);';
+    tittel.textContent = 'Hvem er du?';
+    wrap.appendChild(tittel);
+
+    lærere.forEach(navn => {
+      const btn = document.createElement('button');
+      btn.className = 'login-admin-btn';
+      btn.style.cssText = 'margin-bottom:0.5rem;font-size:0.95rem;background:var(--ink);color:var(--gold-light);border:2px solid var(--gold);';
+      btn.textContent = navn;
+      btn.onclick = function() { loggInn(navn); };
+      wrap.appendChild(btn);
+    });
+
+    loginBox.appendChild(wrap);
+
+    // Hvis lærerlista ikke er lastet ennå, vent og prøv igjen
+    if (lærere.length === 0) {
+      tittel.textContent = 'Laster lærerliste...';
+      setTimeout(visLærerVelgerForGjest, 1500);
+    }
+  }
+
   function sjekkGoogleAuth() {
+    // Sjekk gjestetoken først
+    if (sjekkGjesteToken()) return;
     // Prøv å gjenopprette sesjon fra localStorage først
     try {
       const lagretBruker = localStorage.getItem('påloggetBruker');
@@ -7218,6 +7333,7 @@ Din personlige lenke (send denne til mobilen din):`;
   lastChatStyle();
   lastAdmMsgStyle();
   sjekkGoogleAuth();
+  lastÅpentTilgang();
   lastAdminMelding();
   const _dlg = document.getElementById('customDialog'); if (_dlg) _dlg.addEventListener('click', function(e) { if (e.target === this) skjulDialog(); });
   const _chatMod = document.getElementById('chatModal'); if (_chatMod) _chatMod.addEventListener('click', function(e) { if (e.target === this) skjulChat(); });
@@ -9429,6 +9545,31 @@ Din personlige lenke (send denne til mobilen din):`;
       <!-- Admin accordion wrapper -->
       <div id="adminAccordions" style="display:none;border-top:1px solid #f0eee8;padding-top:0.6rem;margin-bottom:0.5rem;">
         <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#bbb;margin-bottom:0.5rem;padding:0 0.1rem;">⚙ Admin</div>
+
+        <div class="dev-acc">
+          <button class="dev-acc-btn" onclick="toggleDevAcc(this)">
+            🔓 Åpent tilgang (gjestelenke) <span class="dev-acc-arrow">▼</span>
+          </button>
+          <div class="dev-acc-body">
+            <div class="settings-sub" style="margin-bottom:0.75rem;">Alle med lenken kan logge inn uten Google-konto. Begrensede rettigheter — kun lesetilgang som gjest.</div>
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
+              <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;font-weight:600;cursor:pointer;">
+                <input type="checkbox" id="åpentTilgangChk" onchange="toggleÅpentTilgang(this.checked)"
+                  style="width:18px;height:18px;accent-color:#6b2d8b;cursor:pointer;">
+                Aktiver gjestelenke
+              </label>
+              <span id="åpentTilgangStatus" style="font-size:0.78rem;color:#aaa;">Av</span>
+            </div>
+            <div id="åpentTilgangLenkeWrap" style="display:none;flex-direction:column;gap:0.5rem;">
+              <div style="display:flex;gap:0.5rem;align-items:center;">
+                <input id="åpentTilgangLenke" type="text" readonly
+                  style="flex:1;padding:0.35rem 0.65rem;border:1.5px solid #ddd;border-radius:7px;font-size:0.78rem;font-family:monospace;background:#faf8f3;color:#444;">
+                <button onclick="kopierGjesteLenke()" style="background:#6b2d8b;color:#fff;border:none;border-radius:7px;padding:0.35rem 0.85rem;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">📋 Kopier</button>
+              </div>
+              <button onclick="regenererGjesteToken()" style="background:#f0ede4;color:#555;border:1.5px solid #ddd;border-radius:7px;padding:0.3rem 0.85rem;font-size:0.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;align-self:flex-start;">🔄 Generer ny lenke</button>
+            </div>
+          </div>
+        </div>
 
         <div class="dev-acc">
           <button class="dev-acc-btn" onclick="toggleDevAcc(this)">
